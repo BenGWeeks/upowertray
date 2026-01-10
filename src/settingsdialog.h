@@ -15,6 +15,7 @@ public:
 private slots:
     void onPowerProfileChanged(int index);
     void openGitHubIssues();
+    void openConfigEditor();
 
 private:
     QLabel *batteryIconLabel;

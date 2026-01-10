@@ -10,6 +10,8 @@
 #include <QGroupBox>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QProcess>
+#include <QStandardPaths>
 
 SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *parent)
     : QDialog(parent)
@@ -111,8 +113,15 @@ SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *paren
 
     layout->addWidget(profileGroup);
 
-    // Button row with GitHub link and Close button
+    // Button row with config editor, GitHub link and Close button
     auto *buttonLayout = new QHBoxLayout();
+
+    auto *configButton = new QPushButton(this);
+    configButton->setIcon(QIcon::fromTheme("configure", QIcon::fromTheme("preferences-system")));
+    configButton->setText(tr("Edit Config..."));
+    configButton->setFlat(true);
+    connect(configButton, &QPushButton::clicked, this, &SettingsDialog::openConfigEditor);
+    buttonLayout->addWidget(configButton);
 
     auto *githubButton = new QPushButton(this);
     githubButton->setIcon(QIcon::fromTheme("web-browser", QIcon::fromTheme("help-about")));
@@ -141,4 +150,34 @@ void SettingsDialog::onPowerProfileChanged(int index)
 void SettingsDialog::openGitHubIssues()
 {
     QDesktopServices::openUrl(QUrl("https://github.com/BenGWeeks/upowertray/issues"));
+}
+
+void SettingsDialog::openConfigEditor()
+{
+    // Config files to edit
+    QStringList configFiles = {
+        "/etc/systemd/logind.conf",
+        "/etc/UPower/UPower.conf"
+    };
+
+    // Try to find an available text editor (prefer KDE/Qt editors)
+    QStringList editors = {"kate", "kwrite", "gedit", "xed", "featherpad", "mousepad", "nano"};
+    QString editor;
+
+    for (const QString &e : editors) {
+        QString path = QStandardPaths::findExecutable(e);
+        if (!path.isEmpty()) {
+            editor = path;
+            break;
+        }
+    }
+
+    if (editor.isEmpty()) {
+        editor = "nano";  // Fallback to nano (usually available)
+    }
+
+    // Use pkexec for elevated privileges
+    QStringList args = {editor};
+    args.append(configFiles);
+    QProcess::startDetached("pkexec", args);
 }
