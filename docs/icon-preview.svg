@@ -1,45 +1,49 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="400" height="100" viewBox="0 0 400 100">
-  <rect width="400" height="100" fill="#2d2d2d"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="120" viewBox="0 0 440 120">
+  <!-- Dark background to simulate system tray -->
+  <rect width="440" height="120" fill="#1e1e1e"/>
 
-  <!-- Label: Discharging (Green) -->
-  <text x="50" y="85" fill="#888" font-family="sans-serif" font-size="11" text-anchor="middle">75%</text>
+  <!-- Each icon is 22x22, scaled 4x to 88x88 for visibility -->
+  <!-- bodyLeft=2, bodyTop=4, bodyWidth=16, bodyHeight=14, rounded corners r=2 -->
+  <!-- tipWidth=2, tipHeight=6, tip at x=18, y=8 -->
+  <!-- fillMargin=2, maxFillWidth=12, fillHeight=10 -->
 
-  <!-- Battery 1: Green (75%) -->
-  <g transform="translate(28, 20)">
-    <rect x="2" y="4" width="40" height="35" rx="4" fill="none" stroke="white" stroke-width="2"/>
-    <rect x="42" y="12" width="5" height="15" fill="white"/>
-    <rect x="6" y="8" width="24" height="27" fill="#32c832"/>
+  <!-- Icon 1: 75% Green (50, 200, 50) -->
+  <g transform="translate(10, 16) scale(4)">
+    <!-- Battery outline -->
+    <rect x="2" y="4" width="16" height="14" rx="2" ry="2" fill="none" stroke="white" stroke-width="1.5"/>
+    <!-- Positive terminal -->
+    <rect x="18" y="8" width="2" height="6" fill="white"/>
+    <!-- Fill: 75% of 12 = 9 -->
+    <rect x="4" y="6" width="9" height="10" fill="rgb(50, 200, 50)"/>
   </g>
+  <text x="54" y="110" fill="#888" font-family="sans-serif" font-size="12" text-anchor="middle">75%</text>
 
-  <!-- Label: Discharging (Yellow) -->
-  <text x="150" y="85" fill="#888" font-family="sans-serif" font-size="11" text-anchor="middle">15%</text>
-
-  <!-- Battery 2: Yellow (15%) -->
-  <g transform="translate(128, 20)">
-    <rect x="2" y="4" width="40" height="35" rx="4" fill="none" stroke="white" stroke-width="2"/>
-    <rect x="42" y="12" width="5" height="15" fill="white"/>
-    <rect x="6" y="8" width="5" height="27" fill="#dcb432"/>
+  <!-- Icon 2: 15% Yellow (220, 180, 50) -->
+  <g transform="translate(120, 16) scale(4)">
+    <rect x="2" y="4" width="16" height="14" rx="2" ry="2" fill="none" stroke="white" stroke-width="1.5"/>
+    <rect x="18" y="8" width="2" height="6" fill="white"/>
+    <!-- Fill: 15% of 12 = 1.8 -->
+    <rect x="4" y="6" width="1.8" height="10" fill="rgb(220, 180, 50)"/>
   </g>
+  <text x="164" y="110" fill="#888" font-family="sans-serif" font-size="12" text-anchor="middle">15%</text>
 
-  <!-- Label: Discharging (Red) -->
-  <text x="250" y="85" fill="#888" font-family="sans-serif" font-size="11" text-anchor="middle">5%</text>
-
-  <!-- Battery 3: Red (5%) -->
-  <g transform="translate(228, 20)">
-    <rect x="2" y="4" width="40" height="35" rx="4" fill="none" stroke="white" stroke-width="2"/>
-    <rect x="42" y="12" width="5" height="15" fill="white"/>
-    <rect x="6" y="8" width="2" height="27" fill="#dc3232"/>
+  <!-- Icon 3: 5% Red (220, 50, 50) -->
+  <g transform="translate(230, 16) scale(4)">
+    <rect x="2" y="4" width="16" height="14" rx="2" ry="2" fill="none" stroke="white" stroke-width="1.5"/>
+    <rect x="18" y="8" width="2" height="6" fill="white"/>
+    <!-- Fill: 5% of 12 = 0.6 -->
+    <rect x="4" y="6" width="0.6" height="10" fill="rgb(220, 50, 50)"/>
   </g>
+  <text x="274" y="110" fill="#888" font-family="sans-serif" font-size="12" text-anchor="middle">5%</text>
 
-  <!-- Label: Charging -->
-  <text x="350" y="85" fill="#888" font-family="sans-serif" font-size="11" text-anchor="middle">Charging</text>
-
-  <!-- Battery 4: Charging with bolt -->
-  <g transform="translate(328, 20)">
-    <rect x="2" y="4" width="40" height="35" rx="4" fill="none" stroke="white" stroke-width="2"/>
-    <rect x="42" y="12" width="5" height="15" fill="white"/>
-    <rect x="6" y="8" width="18" height="27" fill="#32c832"/>
-    <!-- Lightning bolt -->
-    <polygon points="28,6 18,22 24,22 18,38 32,18 25,18" fill="white"/>
+  <!-- Icon 4: 60% Charging with lightning bolt -->
+  <g transform="translate(340, 16) scale(4)">
+    <rect x="2" y="4" width="16" height="14" rx="2" ry="2" fill="none" stroke="white" stroke-width="1.5"/>
+    <rect x="18" y="8" width="2" height="6" fill="white"/>
+    <!-- Fill: 60% of 12 = 7.2 -->
+    <rect x="4" y="6" width="7.2" height="10" fill="rgb(50, 200, 50)"/>
+    <!-- Lightning bolt: (12,5), (8,11), (10,11), (8,17), (14,10), (11,10) -->
+    <polygon points="12,5 8,11 10,11 8,17 14,10 11,10" fill="white"/>
   </g>
+  <text x="384" y="110" fill="#888" font-family="sans-serif" font-size="12" text-anchor="middle">Charging</text>
 </svg>
