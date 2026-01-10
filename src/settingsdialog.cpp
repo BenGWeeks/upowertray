@@ -154,30 +154,46 @@ void SettingsDialog::openGitHubIssues()
 
 void SettingsDialog::openConfigEditor()
 {
-    // Config files to edit
+    // Config files to edit (use admin:// protocol for KDE apps on Wayland)
     QStringList configFiles = {
         "/etc/systemd/logind.conf",
         "/etc/UPower/UPower.conf"
     };
 
-    // Try to find an available text editor (prefer KDE/Qt editors)
-    QStringList editors = {"kate", "kwrite", "gedit", "xed", "featherpad", "mousepad", "nano"};
-    QString editor;
-
-    for (const QString &e : editors) {
-        QString path = QStandardPaths::findExecutable(e);
-        if (!path.isEmpty()) {
-            editor = path;
-            break;
+    // Check if kate is available (supports admin:// KIO for root access)
+    QString kate = QStandardPaths::findExecutable("kate");
+    if (!kate.isEmpty()) {
+        // Use Kate with admin:// protocol (prompts for password via polkit)
+        QStringList args;
+        for (const QString &file : configFiles) {
+            args << QString("admin://%1").arg(file);
         }
+        QProcess::startDetached(kate, args);
+        return;
     }
 
-    if (editor.isEmpty()) {
-        editor = "nano";  // Fallback to nano (usually available)
+    // Fallback: try kwrite with admin://
+    QString kwrite = QStandardPaths::findExecutable("kwrite");
+    if (!kwrite.isEmpty()) {
+        QStringList args;
+        for (const QString &file : configFiles) {
+            args << QString("admin://%1").arg(file);
+        }
+        QProcess::startDetached(kwrite, args);
+        return;
     }
 
-    // Use pkexec for elevated privileges
-    QStringList args = {editor};
-    args.append(configFiles);
-    QProcess::startDetached("pkexec", args);
+    // Last resort: open terminal with sudo nano
+    QString terminal = QStandardPaths::findExecutable("konsole");
+    if (terminal.isEmpty()) {
+        terminal = QStandardPaths::findExecutable("gnome-terminal");
+    }
+    if (terminal.isEmpty()) {
+        terminal = QStandardPaths::findExecutable("xterm");
+    }
+
+    if (!terminal.isEmpty()) {
+        QString cmd = QString("sudo nano %1 %2").arg(configFiles[0], configFiles[1]);
+        QProcess::startDetached(terminal, {"-e", "sh", "-c", cmd});
+    }
 }
