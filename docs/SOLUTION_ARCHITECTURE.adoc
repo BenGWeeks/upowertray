@@ -85,12 +85,11 @@ Validation ensures critical < low.
 
 Battery icons are rendered programmatically:
 
-* White outline for battery body
-* Color-coded fill based on percentage:
-** Green: >20%
-** Yellow: 10-20%
-** Red: <10%
-* Lightning bolt overlay when charging
+* Color-coded outline and fill based on percentage thresholds:
+** Green fill, white outline: > low threshold (default >20%)
+** Amber fill and outline: critical% to low% range (default 5-20%)
+** Red fill and outline: < critical threshold (default <5%)
+* Lightning bolt overlay when charging (white on green, green on amber/red)
 
 == Data Flow
 

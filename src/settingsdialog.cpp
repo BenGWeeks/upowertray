@@ -95,12 +95,21 @@ SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *paren
     QStringList profiles = UPowerHelper::getAvailablePowerProfiles();
     QString currentProfile = UPowerHelper::getActivePowerProfile();
 
-    for (const QString &profile : profiles) {
-        QString displayName = profile;
-        if (!displayName.isEmpty()) {
-            displayName[0] = displayName[0].toUpper();
-            displayName.replace("-", " ");
+    auto toDisplayName = [](const QString &profile) -> QString {
+        if (profile.isEmpty()) {
+            return profile;
         }
+        QStringList parts = profile.split(QLatin1Char('-'), Qt::SkipEmptyParts);
+        for (QString &part : parts) {
+            if (!part.isEmpty()) {
+                part[0] = part[0].toUpper();
+            }
+        }
+        return parts.join(QLatin1Char(' '));
+    };
+
+    for (const QString &profile : profiles) {
+        QString displayName = toDisplayName(profile);
         profileCombo->addItem(displayName, profile);  // Display name, actual value
     }
 
@@ -189,7 +198,10 @@ void SettingsDialog::openConfigEditor() {
     }
 
     if (!terminal.isEmpty()) {
-        QString cmd = QString("sudo nano %1 %2").arg(configFiles[0], configFiles[1]);
-        QProcess::startDetached(terminal, {"-e", "sh", "-c", cmd});
+        QStringList terminalArgs;
+        terminalArgs << "-e"
+                     << "sudo"
+                     << "nano" << configFiles[0] << configFiles[1];
+        QProcess::startDetached(terminal, terminalArgs);
     }
 }

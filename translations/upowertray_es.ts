@@ -5,7 +5,7 @@
     <name>BatteryTray</name>
     <message>
         <source>Power Settings...</source>
-        <translation>Configuracion de energia...</translation>
+        <translation>Configuración de energía...</translation>
     </message>
     <message>
         <source>Quit</source>
@@ -14,16 +14,16 @@
     <message>
         <source>Battery: %1% (%2)
 Power: %3</source>
-        <translation>Bateria: %1% (%2)
-Energia: %3</translation>
+        <translation>Batería: %1% (%2)
+Energía: %3</translation>
     </message>
     <message>
         <source>Battery: Unknown (UPower not available)</source>
-        <translation>Bateria: Desconocido (UPower no disponible)</translation>
+        <translation>Batería: Desconocido (UPower no disponible)</translation>
     </message>
     <message>
         <source>Battery: Error reading status</source>
-        <translation>Bateria: Error al leer estado</translation>
+        <translation>Batería: Error al leer estado</translation>
     </message>
     <message>
         <source>Fully charged</source>
@@ -39,22 +39,22 @@ Energia: %3</translation>
     </message>
     <message>
         <source>Critical Battery Warning</source>
-        <translation>Advertencia de bateria critica</translation>
+        <translation>Advertencia de batería crítica</translation>
     </message>
     <message>
         <source>Battery level is critically low at %1%!
 Plug in your charger immediately.</source>
-        <translation>El nivel de bateria esta criticamente bajo en %1%!
+        <translation>¡El nivel de batería está críticamente bajo en %1%!
 Conecte el cargador inmediatamente.</translation>
     </message>
     <message>
         <source>Low Battery Warning</source>
-        <translation>Advertencia de bateria baja</translation>
+        <translation>Advertencia de batería baja</translation>
     </message>
     <message>
         <source>Battery level is low at %1%.
 Consider plugging in your charger.</source>
-        <translation>El nivel de bateria esta bajo en %1%.
+        <translation>El nivel de batería está bajo en %1%.
 Considere conectar el cargador.</translation>
     </message>
 </context>
@@ -62,7 +62,7 @@ Considere conectar el cargador.</translation>
     <name>SettingsDialog</name>
     <message>
         <source>upowertray - Power Settings</source>
-        <translation>upowertray - Configuracion de energia</translation>
+        <translation>upowertray - Configuración de energía</translation>
     </message>
     <message>
         <source>Charging</source>
@@ -74,31 +74,31 @@ Considere conectar el cargador.</translation>
     </message>
     <message>
         <source>Notification Thresholds (UPower)</source>
-        <translation>Umbrales de notificacion (UPower)</translation>
+        <translation>Umbrales de notificación (UPower)</translation>
     </message>
     <message>
         <source>Low battery warning:</source>
-        <translation>Advertencia de bateria baja:</translation>
+        <translation>Advertencia de batería baja:</translation>
     </message>
     <message>
         <source>Critical battery warning:</source>
-        <translation>Advertencia de bateria critica:</translation>
+        <translation>Advertencia de batería crítica:</translation>
     </message>
     <message>
         <source>Battery Critical Action (UPower)</source>
-        <translation>Accion de bateria critica (UPower)</translation>
+        <translation>Acción de batería crítica (UPower)</translation>
     </message>
     <message>
         <source>Action:</source>
-        <translation>Accion:</translation>
+        <translation>Acción:</translation>
     </message>
     <message>
         <source>Lid Close Action (systemd-logind)</source>
-        <translation>Accion al cerrar tapa (systemd-logind)</translation>
+        <translation>Acción al cerrar tapa (systemd-logind)</translation>
     </message>
     <message>
         <source>On battery:</source>
-        <translation>Con bateria:</translation>
+        <translation>Con batería:</translation>
     </message>
     <message>
         <source>On AC power:</source>
@@ -106,7 +106,7 @@ Considere conectar el cargador.</translation>
     </message>
     <message>
         <source>Power Profile (power-profiles-daemon)</source>
-        <translation>Perfil de energia (power-profiles-daemon)</translation>
+        <translation>Perfil de energía (power-profiles-daemon)</translation>
     </message>
     <message>
         <source>Current profile:</source>
@@ -115,6 +115,14 @@ Considere conectar el cargador.</translation>
     <message>
         <source>Report Issue...</source>
         <translation>Reportar problema...</translation>
+    </message>
+    <message>
+        <source>Edit Config...</source>
+        <translation>Editar configuración...</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Cerrar</translation>
     </message>
 </context>
 <context>

@@ -73,14 +73,13 @@ QIcon BatteryIcon::create(int size, int percentage, bool charging, const Thresho
         painter.setPen(QPen(boltColor, penWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
         painter.setBrush(boltColor);
 
-        // Scale bolt coordinates
+        // Scale bolt coordinates (Qt auto-closes polygon back to first point)
         QPolygon bolt;
         bolt << QPoint(static_cast<int>(12 * scale), static_cast<int>(6 * scale))
              << QPoint(static_cast<int>(8 * scale), static_cast<int>(11 * scale))
              << QPoint(static_cast<int>(10 * scale), static_cast<int>(11 * scale))
              << QPoint(static_cast<int>(8 * scale), static_cast<int>(16 * scale))
-             << QPoint(static_cast<int>(12 * scale), static_cast<int>(11 * scale))
-             << QPoint(static_cast<int>(10 * scale), static_cast<int>(11 * scale));
+             << QPoint(static_cast<int>(12 * scale), static_cast<int>(11 * scale));
         painter.drawPolygon(bolt);
     }
 

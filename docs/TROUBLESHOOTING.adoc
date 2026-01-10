@@ -17,7 +17,7 @@
 | Left-click the tray icon to force an update. If still stuck, check UPower: `upower -i /org/freedesktop/UPower/devices/battery_BAT0`
 
 | **Wrong battery device (shows 0% or no data)**
-| Your battery may not be BAT0. List devices with `upower -e` and check which one is your battery. Currently upowertray hardcodes BAT0.
+| upowertray automatically detects your battery device. If detection fails, list devices with `upower -e` to verify UPower sees your battery. Check that it has `PowerSupply: yes` and `Type: Battery`.
 
 | **Settings not saving**
 | Check write permissions for `~/.config/upowertray/`. Try `mkdir -p ~/.config/upowertray && chmod 755 ~/.config/upowertray`

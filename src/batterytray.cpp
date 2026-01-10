@@ -91,11 +91,16 @@ void BatteryTray::updateBattery() {
     trayIcon->setIcon(batteryIcon);
     qApp->setWindowIcon(batteryIcon);
 
-    // Get power profile
+    // Get power profile and format display name
     QString powerProfile = UPowerHelper::getActivePowerProfile();
     if (!powerProfile.isEmpty() && powerProfile != "Unknown") {
-        powerProfile[0] = powerProfile[0].toUpper();
-        powerProfile.replace("-", " ");
+        QStringList parts = powerProfile.split(QLatin1Char('-'), Qt::SkipEmptyParts);
+        for (QString &part : parts) {
+            if (!part.isEmpty()) {
+                part[0] = part[0].toUpper();
+            }
+        }
+        powerProfile = parts.join(QLatin1Char(' '));
     }
 
     // Update tooltip
