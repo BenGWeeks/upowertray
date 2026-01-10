@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=UPower Tray
+Comment=Simple battery indicator using UPower
+Exec=upowertray
+Icon=battery
+Categories=System;Monitor;
+X-GNOME-Autostart-enabled=true
