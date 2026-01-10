@@ -33,6 +33,7 @@ private:
     QMenu *trayMenu;
     QTimer *updateTimer;
     QDBusInterface *upowerDevice;
+    QDBusInterface *powerProfiles;
 
     int lastPercentage;
     bool lastCharging;

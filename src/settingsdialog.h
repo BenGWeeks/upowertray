@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QLabel>
+#include <QComboBox>
 
 struct SystemPowerSettings {
     // UPower settings
@@ -13,6 +14,8 @@ struct SystemPowerSettings {
     // Logind settings
     QString handleLidSwitch = "suspend";
     QString handleLidSwitchExternalPower = "suspend";
+    // Power profile
+    QString powerProfile = "Unknown";
 };
 
 class SettingsDialog : public QDialog
@@ -22,12 +25,18 @@ class SettingsDialog : public QDialog
 public:
     explicit SettingsDialog(int batteryPercent, bool charging, QWidget *parent = nullptr);
 
+private slots:
+    void onPowerProfileChanged(int index);
+
 private:
-    QIcon createBatteryIcon(int percentage, bool charging, int criticalThreshold);
+    QIcon createBatteryIcon(int percentage, bool charging, int lowThreshold, int criticalThreshold);
     SystemPowerSettings readSystemSettings();
+    QStringList getAvailablePowerProfiles();
+    void setPowerProfile(const QString &profile);
 
     QLabel *batteryIconLabel;
     QLabel *batteryTextLabel;
+    QComboBox *profileCombo;
 };
 
 #endif // SETTINGSDIALOG_H

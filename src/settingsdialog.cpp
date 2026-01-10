@@ -9,6 +9,10 @@
 #include <QFile>
 #include <QTextStream>
 #include <QGroupBox>
+#include <QDBusInterface>
+#include <QDBusReply>
+#include <QDBusConnection>
+#include <QDBusVariant>
 
 SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *parent)
     : QDialog(parent)
@@ -26,8 +30,11 @@ SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *paren
     batteryFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
     auto *batteryLayout = new QHBoxLayout(batteryFrame);
 
+    batteryLayout->addStretch();  // Center the content
+
     batteryIconLabel = new QLabel(this);
-    QIcon batteryIcon = createBatteryIcon(batteryPercent, charging, static_cast<int>(sys.percentageCritical));
+    QIcon batteryIcon = createBatteryIcon(batteryPercent, charging,
+        static_cast<int>(sys.percentageLow), static_cast<int>(sys.percentageCritical));
     batteryIconLabel->setPixmap(batteryIcon.pixmap(64, 64));
     batteryLayout->addWidget(batteryIconLabel);
 
@@ -36,7 +43,8 @@ SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *paren
         .arg(charging ? "Charging" : "Discharging");
     batteryTextLabel = new QLabel(statusText, this);
     batteryLayout->addWidget(batteryTextLabel);
-    batteryLayout->addStretch();
+
+    batteryLayout->addStretch();  // Center the content
 
     layout->addWidget(batteryFrame);
     layout->addSpacing(10);
@@ -75,6 +83,29 @@ SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *paren
     lidLayout->addRow("On AC power:", lidPowerLabel);
 
     layout->addWidget(lidGroup);
+
+    // Power profile
+    auto *profileGroup = new QGroupBox("Power Profile (power-profiles-daemon)", this);
+    auto *profileLayout = new QFormLayout(profileGroup);
+
+    profileCombo = new QComboBox(this);
+    QStringList profiles = getAvailablePowerProfiles();
+    for (const QString &profile : profiles) {
+        QString displayName = profile;
+        displayName[0] = displayName[0].toUpper();
+        displayName.replace("-", " ");
+        profileCombo->addItem(displayName, profile);  // Display name, actual value
+    }
+    // Select current profile
+    int currentIndex = profiles.indexOf(sys.powerProfile);
+    if (currentIndex >= 0) {
+        profileCombo->setCurrentIndex(currentIndex);
+    }
+    connect(profileCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &SettingsDialog::onPowerProfileChanged);
+    profileLayout->addRow("Current profile:", profileCombo);
+
+    layout->addWidget(profileGroup);
 
     // Close button
     auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close, this);
@@ -126,10 +157,26 @@ SystemPowerSettings SettingsDialog::readSystemSettings()
         logindFile.close();
     }
 
+    // Read power profile via DBus (store raw value like "performance")
+    QDBusInterface powerProfiles(
+        "net.hadess.PowerProfiles",
+        "/net/hadess/PowerProfiles",
+        "org.freedesktop.DBus.Properties",
+        QDBusConnection::systemBus()
+    );
+    if (powerProfiles.isValid()) {
+        QDBusReply<QVariant> reply = powerProfiles.call(
+            "Get", "net.hadess.PowerProfiles", "ActiveProfile"
+        );
+        if (reply.isValid()) {
+            settings.powerProfile = reply.value().toString();
+        }
+    }
+
     return settings;
 }
 
-QIcon SettingsDialog::createBatteryIcon(int percentage, bool charging, int criticalThreshold)
+QIcon SettingsDialog::createBatteryIcon(int percentage, bool charging, int lowThreshold, int criticalThreshold)
 {
     const int size = 64;
     QPixmap pixmap(size, size);
@@ -146,9 +193,15 @@ QIcon SettingsDialog::createBatteryIcon(int percentage, bool charging, int criti
     const int tipWidth = 6;
     const int tipHeight = 18;
 
-    // Outline color - red at critical level, white otherwise
-    QColor outlineColor = (percentage <= criticalThreshold)
-        ? QColor(220, 50, 50) : Qt::white;
+    // Outline color - white normally, amber at low, red at critical
+    QColor outlineColor;
+    if (percentage <= criticalThreshold) {
+        outlineColor = QColor(220, 50, 50);  // Red
+    } else if (percentage <= lowThreshold) {
+        outlineColor = QColor(220, 180, 50); // Yellow/Orange
+    } else {
+        outlineColor = Qt::white;  // White when healthy
+    }
 
     // Draw battery outline
     painter.setPen(QPen(outlineColor, 2.5));
@@ -165,11 +218,11 @@ QIcon SettingsDialog::createBatteryIcon(int percentage, bool charging, int criti
     const int fillWidth = (percentage * maxFillWidth) / 100;
     const int fillHeight = bodyHeight - 2 * fillMargin;
 
-    // Choose fill color based on percentage
+    // Choose fill color based on percentage (same thresholds as outline)
     QColor fillColor;
-    if (percentage <= 10) {
+    if (percentage <= criticalThreshold) {
         fillColor = QColor(220, 50, 50);  // Red
-    } else if (percentage <= 20) {
+    } else if (percentage <= lowThreshold) {
         fillColor = QColor(220, 180, 50); // Yellow/Orange
     } else {
         fillColor = QColor(50, 200, 50);  // Green
@@ -196,4 +249,31 @@ QIcon SettingsDialog::createBatteryIcon(int percentage, bool charging, int criti
 
     painter.end();
     return QIcon(pixmap);
+}
+
+QStringList SettingsDialog::getAvailablePowerProfiles()
+{
+    // Standard power-profiles-daemon profiles
+    return QStringList() << "power-saver" << "balanced" << "performance";
+}
+
+void SettingsDialog::setPowerProfile(const QString &profile)
+{
+    QDBusInterface powerProfiles(
+        "net.hadess.PowerProfiles",
+        "/net/hadess/PowerProfiles",
+        "org.freedesktop.DBus.Properties",
+        QDBusConnection::systemBus()
+    );
+
+    if (powerProfiles.isValid()) {
+        powerProfiles.call("Set", "net.hadess.PowerProfiles", "ActiveProfile",
+                          QVariant::fromValue(QDBusVariant(profile)));
+    }
+}
+
+void SettingsDialog::onPowerProfileChanged(int index)
+{
+    QString profile = profileCombo->itemData(index).toString();
+    setPowerProfile(profile);
 }

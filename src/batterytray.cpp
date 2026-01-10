@@ -32,6 +32,15 @@ BatteryTray::BatteryTray(QObject *parent)
         this
     );
 
+    // Set up power profiles DBus interface
+    powerProfiles = new QDBusInterface(
+        "net.hadess.PowerProfiles",
+        "/net/hadess/PowerProfiles",
+        "org.freedesktop.DBus.Properties",
+        QDBusConnection::systemBus(),
+        this
+    );
+
     // Set up update timer
     updateTimer = new QTimer(this);
     connect(updateTimer, &QTimer::timeout, this, &BatteryTray::updateBattery);
@@ -131,8 +140,25 @@ void BatteryTray::updateBattery()
     trayIcon->setIcon(batteryIcon);
     qApp->setWindowIcon(batteryIcon);
 
+    // Get power profile
+    QString powerProfile = "Unknown";
+    if (powerProfiles && powerProfiles->isValid()) {
+        QDBusReply<QVariant> profileReply = powerProfiles->call(
+            "Get", "net.hadess.PowerProfiles", "ActiveProfile"
+        );
+        if (profileReply.isValid()) {
+            QString profile = profileReply.value().toString();
+            // Capitalize first letter
+            if (!profile.isEmpty()) {
+                profile[0] = profile[0].toUpper();
+                profile.replace("-", " ");
+                powerProfile = profile;
+            }
+        }
+    }
+
     // Update tooltip
-    trayIcon->setToolTip(QString("Battery: %1% (%2)").arg(percentage).arg(stateStr));
+    trayIcon->setToolTip(QString("Battery: %1% (%2)\nPower: %3").arg(percentage).arg(stateStr).arg(powerProfile));
 
     // Check for low battery warnings (only when discharging)
     if (!charging && !fullyCharged) {
@@ -174,9 +200,15 @@ QIcon BatteryTray::createBatteryIcon(int percentage, bool charging)
     const int tipWidth = 2;
     const int tipHeight = 6;
 
-    // Outline color - red at critical level, white otherwise
-    QColor outlineColor = (percentage <= criticalBatteryThreshold)
-        ? QColor(220, 50, 50) : Qt::white;
+    // Outline color - white normally, amber at low, red at critical
+    QColor outlineColor;
+    if (percentage <= criticalBatteryThreshold) {
+        outlineColor = QColor(220, 50, 50);  // Red
+    } else if (percentage <= lowBatteryThreshold) {
+        outlineColor = QColor(220, 180, 50); // Yellow/Orange
+    } else {
+        outlineColor = Qt::white;  // White when healthy
+    }
 
     // Draw battery outline
     painter.setPen(QPen(outlineColor, 1.5));
@@ -193,11 +225,11 @@ QIcon BatteryTray::createBatteryIcon(int percentage, bool charging)
     const int fillWidth = (percentage * maxFillWidth) / 100;
     const int fillHeight = bodyHeight - 2 * fillMargin;
 
-    // Choose fill color based on percentage
+    // Choose fill color based on percentage (same thresholds as outline)
     QColor fillColor;
-    if (percentage <= 10) {
+    if (percentage <= criticalBatteryThreshold) {
         fillColor = QColor(220, 50, 50);  // Red
-    } else if (percentage <= 20) {
+    } else if (percentage <= lowBatteryThreshold) {
         fillColor = QColor(220, 180, 50); // Yellow/Orange
     } else {
         fillColor = QColor(50, 200, 50);  // Green
