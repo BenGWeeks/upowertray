@@ -5,8 +5,6 @@
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QTimer>
-#include <QDBusInterface>
-#include <QDBusConnection>
 
 class BatteryTray : public QObject
 {
@@ -25,15 +23,15 @@ private slots:
 private:
     void createTrayIcon();
     void createMenu();
-    QIcon createBatteryIcon(int percentage, bool charging);
     void showLowBatteryNotification(int percentage);
     void loadSystemSettings();
+    void findBatteryDevice();
 
     QSystemTrayIcon *trayIcon;
     QMenu *trayMenu;
     QTimer *updateTimer;
-    QDBusInterface *upowerDevice;
-    QDBusInterface *powerProfiles;
+
+    QString batteryDevicePath;
 
     int lastPercentage;
     bool lastCharging;

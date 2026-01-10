@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          qt6-base-dev \
+          qt6-tools-dev \
+          qt6-tools-dev-tools \
+          qt6-l10n-tools \
+          libgl1-mesa-dev \
+          cmake \
+          build-essential
+
+    - name: Configure
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --parallel
+
+    - name: Create tarball
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        tar -czvf upowertray-${VERSION}-linux-x86_64.tar.gz \
+          -C build upowertray \
+          -C .. upowertray.desktop \
+          -C .. icons/upowertray.svg \
+          -C .. README.md \
+          -C .. LICENSE
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: upowertray-*.tar.gz
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
