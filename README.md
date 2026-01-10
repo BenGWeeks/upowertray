@@ -1,4 +1,10 @@
-![upowertray](docs/logo.svg)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/logo.svg">
+    <img alt="upowertray" src="docs/logo.svg" width="100%">
+  </picture>
+</p>
 
 A simple, lightweight battery tray indicator for Linux using UPower. Works natively with KDE Plasma on Wayland.
 
