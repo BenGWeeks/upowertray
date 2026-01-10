@@ -13,6 +13,8 @@ add_executable(upowertray
     src/main.cpp
     src/batterytray.cpp
     src/batterytray.h
+    src/settingsdialog.cpp
+    src/settingsdialog.h
 )
 
 target_link_libraries(upowertray PRIVATE
@@ -24,3 +26,4 @@ target_link_libraries(upowertray PRIVATE
 
 install(TARGETS upowertray DESTINATION bin)
 install(FILES upowertray.desktop DESTINATION share/applications)
+install(FILES icons/upowertray.svg DESTINATION share/icons/hicolor/scalable/apps)

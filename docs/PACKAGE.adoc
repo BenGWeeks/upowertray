@@ -1,0 +1,232 @@
+= upowertray Packaging Guide
+:toc:
+
+== Overview
+
+This document outlines strategies for packaging upowertray for distribution via package managers.
+
+== Current Status
+
+upowertray is currently distributed as source code only. Users must build from source using CMake.
+
+== Packaging Options
+
+=== Option 1: Ubuntu PPA (Recommended for Ubuntu/Debian)
+
+A Personal Package Archive (PPA) allows Ubuntu users to install via `apt`.
+
+**Pros:**
+
+* `sudo apt install upowertray` experience
+* Automatic updates via apt
+* Wide Ubuntu user base
+
+**Cons:**
+
+* Requires Launchpad account
+* Must maintain for each Ubuntu release
+* Debian users need manual .deb download
+
+**Steps to Create:**
+
+1. Create Launchpad account at https://launchpad.net
+2. Set up GPG key for signing
+3. Create `debian/` packaging files:
++
+[source]
+----
+debian/
+├── control          # Package metadata, dependencies
+├── rules            # Build instructions
+├── changelog        # Version history
+├── copyright        # License info
+└── compat           # Debhelper version
+----
+
+4. Create PPA at https://launchpad.net/~/+activate-ppa
+5. Build source package and upload:
++
+[source,bash]
+----
+debuild -S -sa
+dput ppa:username/upowertray ../*.changes
+----
+
+**Example debian/control:**
+
+[source]
+----
+Source: upowertray
+Section: utils
+Priority: optional
+Maintainer: Ben Weeks <email@example.com>
+Build-Depends: debhelper (>= 13), cmake, qt6-base-dev
+Standards-Version: 4.6.0
+
+Package: upowertray
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Lightweight battery tray indicator for KDE Plasma
+ A Qt6-based battery tray indicator that works natively on
+ KDE Plasma/Wayland without interfering with systemd power management.
+----
+
+=== Option 2: Arch User Repository (AUR)
+
+For Arch Linux users.
+
+**Pros:**
+
+* Simple PKGBUILD format
+* Large Arch user community
+* Easy to maintain
+
+**Cons:**
+
+* Arch-only
+* Users must use AUR helper (yay, paru) or makepkg
+
+**Steps:**
+
+1. Create AUR account at https://aur.archlinux.org
+2. Create PKGBUILD:
++
+[source,bash]
+----
+# Maintainer: Ben Weeks <email@example.com>
+pkgname=upowertray
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Lightweight battery tray indicator for KDE Plasma"
+arch=('x86_64')
+url="https://github.com/BenGWeeks/upowertray"
+license=('MIT')
+depends=('qt6-base')
+makedepends=('cmake')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/BenGWeeks/upowertray/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "$pkgname-$pkgver"
+    cmake -B build -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build build
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    DESTDIR="$pkgdir" cmake --install build
+}
+----
+
+3. Submit to AUR
+
+=== Option 3: Flatpak
+
+Universal Linux package format.
+
+**Pros:**
+
+* Works on any Linux distro
+* Sandboxed
+* Auto-updates via Flathub
+
+**Cons:**
+
+* Larger download size (bundles dependencies)
+* May have system tray integration issues
+* More complex manifest
+
+**Steps:**
+
+1. Create `com.github.BenGWeeks.upowertray.yml` manifest
+2. Test locally with `flatpak-builder`
+3. Submit to Flathub
+
+=== Option 4: AppImage
+
+Single-file portable format.
+
+**Pros:**
+
+* Single downloadable file
+* No installation required
+* Works on most distros
+
+**Cons:**
+
+* No auto-updates
+* Larger file size
+* Manual distribution
+
+**Steps:**
+
+1. Use `linuxdeployqt` to create AppImage
+2. Host on GitHub releases
+
+== Recommended Approach
+
+For maximum reach with minimal maintenance:
+
+1. **Phase 1**: AUR (easiest to set up, good community)
+2. **Phase 2**: Ubuntu PPA (largest user base)
+3. **Phase 3**: Flatpak on Flathub (universal)
+
+== GitHub Releases
+
+Regardless of package manager support, always provide:
+
+* Source tarball (`.tar.gz`)
+* Pre-built binary (optional)
+* Changelog
+
+Create releases at: https://github.com/BenGWeeks/upowertray/releases
+
+Example release workflow:
+
+[source,bash]
+----
+# Tag the release
+git tag -a v1.0.0 -m "Release 1.0.0"
+git push origin v1.0.0
+
+# Create source tarball
+git archive --format=tar.gz --prefix=upowertray-1.0.0/ v1.0.0 > upowertray-1.0.0.tar.gz
+----
+
+== CI/CD Automation
+
+Consider GitHub Actions for automated packaging:
+
+[source,yaml]
+----
+# .github/workflows/release.yml
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt install qt6-base-dev cmake
+      - name: Build
+        run: |
+          mkdir build && cd build
+          cmake ..
+          make
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/upowertray
+----
+
+== Next Steps
+
+1. [ ] Create GitHub release for v1.0.0
+2. [ ] Submit to AUR
+3. [ ] Set up PPA for Ubuntu
+4. [ ] Consider Flatpak for universal support

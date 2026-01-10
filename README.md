@@ -24,10 +24,22 @@ Existing alternatives like `cbatticon` and `fdpowermon` use GTK and the legacy X
 - Shows battery percentage with color-coded icon (green/yellow/red)
 - Charging indicator (lightning bolt overlay)
 - Tooltip with current percentage and state
-- Low battery warning at 20%
-- Critical battery warning at 5%
+- Configurable low/critical battery warning thresholds
+- Settings dialog showing system power settings (UPower + logind)
 - Updates every 30 seconds
-- Left-click to force update
+- Left-click to open settings dialog
+
+## Configuration
+
+Left-click the tray icon to view power settings. The dialog shows:
+- Current battery status
+- Notification thresholds (from UPower)
+- Battery critical action (from UPower)
+- Lid close action (from systemd-logind)
+
+Settings are read from system config files:
+- `/etc/UPower/UPower.conf` - Battery thresholds and actions
+- `/etc/systemd/logind.conf` - Lid close behavior
 
 ## Icon Preview
 
@@ -97,6 +109,25 @@ cp upowertray.desktop ~/.config/autostart/
 
 Or add `upowertray` to your desktop environment's startup applications.
 
+## Sleep Modes Explained
+
+| Mode | What happens | Battery drain | Resume time |
+|------|--------------|---------------|-------------|
+| **Suspend** | RAM stays powered | 5-10%/day | Instant |
+| **Hibernate** | RAM → disk, power off | 0% | 10-30s |
+| **HybridSleep** | RAM → disk, then suspend | ~2-3%/day | Instant* |
+
+\* HybridSleep resumes instantly if battery is OK, or from disk if battery died.
+
+### Recommended Configuration
+
+| Trigger | Action | Why |
+|---------|--------|-----|
+| Lid close | Hibernate | 0% drain when laptop is put away |
+| Battery critical | HybridSleep | Quick wake if plugged in, safe if battery dies |
+
+See [docs/HIBERNATE.adoc](docs/HIBERNATE.adoc) for setup instructions.
+
 ## Verify No Inhibitors
 
 To confirm upowertray doesn't interfere with systemd power management:
@@ -106,6 +137,14 @@ systemd-inhibit --list --mode=block
 ```
 
 upowertray should NOT appear in this list.
+
+## Documentation
+
+- [Installation Guide](docs/INSTALLATION.adoc)
+- [Hibernation Setup](docs/HIBERNATE.adoc)
+- [Troubleshooting](docs/TROUBLESHOOTING.adoc)
+- [Solution Architecture](docs/SOLUTION_ARCHITECTURE.adoc)
+- [Packaging Guide](docs/PACKAGE.adoc)
 
 ## License
 

@@ -1,0 +1,83 @@
+= upowertray Troubleshooting Guide
+:toc:
+
+== Common Issues
+
+[cols="2,3"]
+|===
+| Problem | Solution
+
+| **Tray icon not visible**
+| KDE Plasma may hide new tray icons by default. Right-click the system tray -> Configure System Tray -> Entries -> Find "upowertray" and set to "Always visible"
+
+| **Icon shows "Unknown (UPower not available)"**
+| UPower service may not be running. Check with `systemctl status upower`. Start it with `sudo systemctl start upower`
+
+| **Battery percentage stuck/not updating**
+| Left-click the tray icon to force an update. If still stuck, check UPower: `upower -i /org/freedesktop/UPower/devices/battery_BAT0`
+
+| **Wrong battery device (shows 0% or no data)**
+| Your battery may not be BAT0. List devices with `upower -e` and check which one is your battery. Currently upowertray hardcodes BAT0.
+
+| **Settings not saving**
+| Check write permissions for `~/.config/upowertray/`. Try `mkdir -p ~/.config/upowertray && chmod 755 ~/.config/upowertray`
+
+| **App doesn't autostart**
+| Copy desktop file: `cp /usr/share/applications/upowertray.desktop ~/.config/autostart/`
+
+| **Multiple instances running**
+| Kill existing instances: `killall upowertray` before starting a new one
+
+| **Notifications not appearing**
+| Check that your notification daemon is running. On KDE, notifications should work out of the box.
+
+| **Command-line options ignored**
+| Command-line options take priority over saved settings. Check `upowertray --help` for correct syntax.
+
+| **Build fails: Qt6 not found**
+| Install Qt6 development packages. Ubuntu: `sudo apt install qt6-base-dev`. Fedora: `sudo dnf install qt6-qtbase-devel`
+
+| **Build fails: DBus headers missing**
+| Install DBus Qt6 bindings. Usually included in qt6-base-dev, but may need explicit install on some distros.
+
+| **Wayland: Icon looks wrong/pixelated**
+| Qt6 should handle HiDPI automatically. Try setting `QT_SCALE_FACTOR=1` or `QT_AUTO_SCREEN_SCALE_FACTOR=1`
+|===
+
+== Diagnostic Commands
+
+Check if UPower is working:
+
+[source,bash]
+----
+upower -e                                    # List all power devices
+upower -i /org/freedesktop/UPower/devices/battery_BAT0  # Battery details
+----
+
+Check if upowertray is running:
+
+[source,bash]
+----
+pgrep -a upowertray
+----
+
+Check settings file:
+
+[source,bash]
+----
+cat ~/.config/upowertray/upowertray.conf
+----
+
+View application logs:
+
+[source,bash]
+----
+journalctl --user -f | grep upowertray
+----
+
+== Getting Help
+
+If issues persist:
+
+1. Check the GitHub issues: https://github.com/BenGWeeks/upowertray/issues
+2. Include output from diagnostic commands when reporting issues

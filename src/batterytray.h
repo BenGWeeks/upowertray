@@ -19,6 +19,7 @@ public:
 private slots:
     void updateBattery();
     void onActivated(QSystemTrayIcon::ActivationReason reason);
+    void showSettings();
     void quit();
 
 private:
@@ -26,6 +27,7 @@ private:
     void createMenu();
     QIcon createBatteryIcon(int percentage, bool charging);
     void showLowBatteryNotification(int percentage);
+    void loadSystemSettings();
 
     QSystemTrayIcon *trayIcon;
     QMenu *trayMenu;
@@ -33,11 +35,13 @@ private:
     QDBusInterface *upowerDevice;
 
     int lastPercentage;
+    bool lastCharging;
     bool lowBatteryWarningShown;
     bool criticalBatteryWarningShown;
 
-    static constexpr int LOW_BATTERY_THRESHOLD = 20;
-    static constexpr int CRITICAL_BATTERY_THRESHOLD = 5;
+    // Read from UPower config
+    int lowBatteryThreshold;
+    int criticalBatteryThreshold;
     static constexpr int UPDATE_INTERVAL_MS = 30000; // 30 seconds
 };
 

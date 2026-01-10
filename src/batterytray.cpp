@@ -1,7 +1,10 @@
 #include "batterytray.h"
+#include "settingsdialog.h"
 #include <QPainter>
 #include <QDBusReply>
 #include <QApplication>
+#include <QFile>
+#include <QTextStream>
 
 BatteryTray::BatteryTray(QObject *parent)
     : QObject(parent)
@@ -10,9 +13,13 @@ BatteryTray::BatteryTray(QObject *parent)
     , updateTimer(nullptr)
     , upowerDevice(nullptr)
     , lastPercentage(-1)
+    , lastCharging(false)
     , lowBatteryWarningShown(false)
     , criticalBatteryWarningShown(false)
+    , lowBatteryThreshold(20)
+    , criticalBatteryThreshold(5)
 {
+    loadSystemSettings();
     createMenu();
     createTrayIcon();
 
@@ -40,9 +47,33 @@ BatteryTray::~BatteryTray()
 {
 }
 
+void BatteryTray::loadSystemSettings()
+{
+    QFile file("/etc/UPower/UPower.conf");
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&file);
+        while (!in.atEnd()) {
+            QString line = in.readLine().trimmed();
+            if (line.startsWith('#') || line.isEmpty()) continue;
+
+            if (line.startsWith("PercentageLow=")) {
+                lowBatteryThreshold = static_cast<int>(line.mid(14).toDouble());
+            } else if (line.startsWith("PercentageCritical=")) {
+                criticalBatteryThreshold = static_cast<int>(line.mid(19).toDouble());
+            }
+        }
+        file.close();
+    }
+}
+
 void BatteryTray::createMenu()
 {
     trayMenu = new QMenu();
+
+    QAction *settingsAction = trayMenu->addAction("Power Settings...");
+    connect(settingsAction, &QAction::triggered, this, &BatteryTray::showSettings);
+
+    trayMenu->addSeparator();
 
     QAction *quitAction = trayMenu->addAction("Quit");
     connect(quitAction, &QAction::triggered, this, &BatteryTray::quit);
@@ -95,32 +126,35 @@ void BatteryTray::updateBattery()
         stateStr = "Discharging";
     }
 
-    // Update icon
-    trayIcon->setIcon(createBatteryIcon(percentage, charging || fullyCharged));
+    // Update icon (both tray and taskbar)
+    QIcon batteryIcon = createBatteryIcon(percentage, charging || fullyCharged);
+    trayIcon->setIcon(batteryIcon);
+    qApp->setWindowIcon(batteryIcon);
 
     // Update tooltip
     trayIcon->setToolTip(QString("Battery: %1% (%2)").arg(percentage).arg(stateStr));
 
     // Check for low battery warnings (only when discharging)
     if (!charging && !fullyCharged) {
-        if (percentage <= CRITICAL_BATTERY_THRESHOLD && !criticalBatteryWarningShown) {
+        if (percentage <= criticalBatteryThreshold && !criticalBatteryWarningShown) {
             showLowBatteryNotification(percentage);
             criticalBatteryWarningShown = true;
-        } else if (percentage <= LOW_BATTERY_THRESHOLD && !lowBatteryWarningShown) {
+        } else if (percentage <= lowBatteryThreshold && !lowBatteryWarningShown) {
             showLowBatteryNotification(percentage);
             lowBatteryWarningShown = true;
         }
     }
 
     // Reset warning flags when charging or battery recovers
-    if (charging || percentage > LOW_BATTERY_THRESHOLD) {
+    if (charging || percentage > lowBatteryThreshold) {
         lowBatteryWarningShown = false;
     }
-    if (charging || percentage > CRITICAL_BATTERY_THRESHOLD) {
+    if (charging || percentage > criticalBatteryThreshold) {
         criticalBatteryWarningShown = false;
     }
 
     lastPercentage = percentage;
+    lastCharging = charging || fullyCharged;
 }
 
 QIcon BatteryTray::createBatteryIcon(int percentage, bool charging)
@@ -194,7 +228,7 @@ void BatteryTray::showLowBatteryNotification(int percentage)
     QString message;
     QSystemTrayIcon::MessageIcon icon;
 
-    if (percentage <= CRITICAL_BATTERY_THRESHOLD) {
+    if (percentage <= criticalBatteryThreshold) {
         title = "Critical Battery Warning";
         message = QString("Battery level is critically low at %1%!\nPlug in your charger immediately.").arg(percentage);
         icon = QSystemTrayIcon::Critical;
@@ -210,12 +244,18 @@ void BatteryTray::showLowBatteryNotification(int percentage)
 void BatteryTray::onActivated(QSystemTrayIcon::ActivationReason reason)
 {
     if (reason == QSystemTrayIcon::Trigger) {
-        // Left click - force update
-        updateBattery();
+        // Left click - open settings
+        showSettings();
     }
 }
 
 void BatteryTray::quit()
 {
     QApplication::quit();
+}
+
+void BatteryTray::showSettings()
+{
+    SettingsDialog dialog(lastPercentage, lastCharging);
+    dialog.exec();
 }
