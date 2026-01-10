@@ -112,16 +112,12 @@ QStringList UPowerHelper::getAvailablePowerProfiles() {
 
     if (!powerProfiles.isValid()) {
         // Fallback to standard profiles if daemon not available
-        return QStringList() << "power-saver"
-                             << "balanced"
-                             << "performance";
+        return {"power-saver", "balanced", "performance"};
     }
 
     QDBusReply<QVariant> reply = powerProfiles.call("Get", "net.hadess.PowerProfiles", "Profiles");
     if (!reply.isValid()) {
-        return QStringList() << "power-saver"
-                             << "balanced"
-                             << "performance";
+        return {"power-saver", "balanced", "performance"};
     }
 
     // Parse the array of dictionaries
@@ -144,9 +140,7 @@ QStringList UPowerHelper::getAvailablePowerProfiles() {
     arg.endArray();
 
     if (profiles.isEmpty()) {
-        return QStringList() << "power-saver"
-                             << "balanced"
-                             << "performance";
+        return {"power-saver", "balanced", "performance"};
     }
 
     return profiles;
