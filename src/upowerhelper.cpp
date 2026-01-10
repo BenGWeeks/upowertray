@@ -57,9 +57,9 @@ QString UPowerHelper::findBatteryDevice() {
         QDBusInterface device(UPOWER_SERVICE, path, "org.freedesktop.DBus.Properties",
                               QDBusConnection::systemBus());
         if (device.isValid()) {
-            QDBusReply<QVariant> reply =
+            QDBusReply<QVariant> isPresentReply =
                 device.call("Get", "org.freedesktop.UPower.Device", "IsPresent");
-            if (reply.isValid() && reply.value().toBool()) {
+            if (isPresentReply.isValid() && isPresentReply.value().toBool()) {
                 return path;
             }
         }
