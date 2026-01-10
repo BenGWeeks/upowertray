@@ -18,13 +18,16 @@ SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *paren
 
     auto *layout = new QVBoxLayout(this);
 
+    // Read system settings first (need critical threshold for icon)
+    SystemPowerSettings sys = readSystemSettings();
+
     // Battery status section
     auto *batteryFrame = new QFrame(this);
     batteryFrame->setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
     auto *batteryLayout = new QHBoxLayout(batteryFrame);
 
     batteryIconLabel = new QLabel(this);
-    QIcon batteryIcon = createBatteryIcon(batteryPercent, charging);
+    QIcon batteryIcon = createBatteryIcon(batteryPercent, charging, static_cast<int>(sys.percentageCritical));
     batteryIconLabel->setPixmap(batteryIcon.pixmap(64, 64));
     batteryLayout->addWidget(batteryIconLabel);
 
@@ -37,9 +40,6 @@ SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *paren
 
     layout->addWidget(batteryFrame);
     layout->addSpacing(10);
-
-    // Read system settings
-    SystemPowerSettings sys = readSystemSettings();
 
     // UPower notification thresholds
     auto *notifyGroup = new QGroupBox("Notification Thresholds (UPower)", this);
@@ -129,7 +129,7 @@ SystemPowerSettings SettingsDialog::readSystemSettings()
     return settings;
 }
 
-QIcon SettingsDialog::createBatteryIcon(int percentage, bool charging)
+QIcon SettingsDialog::createBatteryIcon(int percentage, bool charging, int criticalThreshold)
 {
     const int size = 64;
     QPixmap pixmap(size, size);
@@ -146,14 +146,18 @@ QIcon SettingsDialog::createBatteryIcon(int percentage, bool charging)
     const int tipWidth = 6;
     const int tipHeight = 18;
 
+    // Outline color - red at critical level, white otherwise
+    QColor outlineColor = (percentage <= criticalThreshold)
+        ? QColor(220, 50, 50) : Qt::white;
+
     // Draw battery outline
-    painter.setPen(QPen(Qt::white, 2.5));
+    painter.setPen(QPen(outlineColor, 2.5));
     painter.setBrush(Qt::NoBrush);
     painter.drawRoundedRect(bodyLeft, bodyTop, bodyWidth, bodyHeight, 4, 4);
 
     // Draw battery tip (positive terminal)
     painter.fillRect(bodyLeft + bodyWidth, bodyTop + (bodyHeight - tipHeight) / 2,
-                     tipWidth, tipHeight, Qt::white);
+                     tipWidth, tipHeight, outlineColor);
 
     // Calculate fill width based on percentage
     const int fillMargin = 3;

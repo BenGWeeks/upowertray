@@ -174,14 +174,18 @@ QIcon BatteryTray::createBatteryIcon(int percentage, bool charging)
     const int tipWidth = 2;
     const int tipHeight = 6;
 
+    // Outline color - red at critical level, white otherwise
+    QColor outlineColor = (percentage <= criticalBatteryThreshold)
+        ? QColor(220, 50, 50) : Qt::white;
+
     // Draw battery outline
-    painter.setPen(QPen(Qt::white, 1.5));
+    painter.setPen(QPen(outlineColor, 1.5));
     painter.setBrush(Qt::NoBrush);
     painter.drawRoundedRect(bodyLeft, bodyTop, bodyWidth, bodyHeight, 2, 2);
 
     // Draw battery tip (positive terminal)
     painter.fillRect(bodyLeft + bodyWidth, bodyTop + (bodyHeight - tipHeight) / 2,
-                     tipWidth, tipHeight, Qt::white);
+                     tipWidth, tipHeight, outlineColor);
 
     // Calculate fill width based on percentage
     const int fillMargin = 2;

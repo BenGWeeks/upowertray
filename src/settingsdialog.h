@@ -23,7 +23,7 @@ public:
     explicit SettingsDialog(int batteryPercent, bool charging, QWidget *parent = nullptr);
 
 private:
-    QIcon createBatteryIcon(int percentage, bool charging);
+    QIcon createBatteryIcon(int percentage, bool charging, int criticalThreshold);
     SystemPowerSettings readSystemSettings();
 
     QLabel *batteryIconLabel;
