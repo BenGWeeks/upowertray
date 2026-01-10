@@ -1,6 +1,7 @@
 #include "batterytray.h"
 #include "settingsdialog.h"
 #include <QPainter>
+#include <QPainterPath>
 #include <QDBusReply>
 #include <QApplication>
 #include <QFile>
@@ -239,18 +240,19 @@ QIcon BatteryTray::createBatteryIcon(int percentage, bool charging)
     painter.fillRect(bodyLeft + fillMargin, bodyTop + fillMargin,
                      fillWidth, fillHeight, fillColor);
 
-    // Draw charging indicator (lightning bolt)
+    // Draw charging indicator (white bolt when green, green bolt otherwise)
     if (charging) {
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(Qt::white);
+        QColor boltColor = (percentage > lowBatteryThreshold) ? Qt::white : QColor(50, 200, 50);
+        painter.setPen(QPen(boltColor, 1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        painter.setBrush(boltColor);
 
         QPolygon bolt;
-        bolt << QPoint(12, 5)
+        bolt << QPoint(12, 6)
              << QPoint(8, 11)
              << QPoint(10, 11)
-             << QPoint(8, 17)
-             << QPoint(14, 10)
-             << QPoint(11, 10);
+             << QPoint(8, 16)
+             << QPoint(12, 11)
+             << QPoint(10, 11);
         painter.drawPolygon(bolt);
     }
 

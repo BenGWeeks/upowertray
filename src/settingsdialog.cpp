@@ -6,6 +6,7 @@
 #include <QFormLayout>
 #include <QFrame>
 #include <QPainter>
+#include <QPainterPath>
 #include <QFile>
 #include <QTextStream>
 #include <QGroupBox>
@@ -232,18 +233,19 @@ QIcon SettingsDialog::createBatteryIcon(int percentage, bool charging, int lowTh
     painter.fillRect(bodyLeft + fillMargin, bodyTop + fillMargin,
                      fillWidth, fillHeight, fillColor);
 
-    // Draw charging indicator (lightning bolt)
+    // Draw charging indicator (white bolt when green, green bolt otherwise)
     if (charging) {
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(Qt::white);
+        QColor boltColor = (percentage > lowThreshold) ? Qt::white : QColor(50, 200, 50);
+        painter.setPen(QPen(boltColor, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        painter.setBrush(boltColor);
 
         QPolygon bolt;
-        bolt << QPoint(34, 12)
-             << QPoint(20, 32)
+        bolt << QPoint(34, 16)
+             << QPoint(22, 32)
              << QPoint(28, 32)
-             << QPoint(20, 52)
-             << QPoint(40, 28)
-             << QPoint(30, 28);
+             << QPoint(22, 48)
+             << QPoint(36, 30)
+             << QPoint(28, 30);
         painter.drawPolygon(bolt);
     }
 
