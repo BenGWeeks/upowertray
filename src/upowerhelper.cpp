@@ -1,25 +1,21 @@
 #include "upowerhelper.h"
+
+#include <QDBusArgument>
 #include <QDBusConnection>
 #include <QDBusReply>
-#include <QDBusArgument>
 #include <QDBusVariant>
 #include <QFile>
-#include <QTextStream>
 #include <QRegularExpression>
+#include <QTextStream>
 
 const QString UPowerHelper::UPOWER_SERVICE = "org.freedesktop.UPower";
 const QString UPowerHelper::UPOWER_PATH = "/org/freedesktop/UPower";
 const QString UPowerHelper::POWER_PROFILES_SERVICE = "net.hadess.PowerProfiles";
 const QString UPowerHelper::POWER_PROFILES_PATH = "/net/hadess/PowerProfiles";
 
-QString UPowerHelper::findBatteryDevice()
-{
-    QDBusInterface upower(
-        UPOWER_SERVICE,
-        UPOWER_PATH,
-        "org.freedesktop.UPower",
-        QDBusConnection::systemBus()
-    );
+QString UPowerHelper::findBatteryDevice() {
+    QDBusInterface upower(UPOWER_SERVICE, UPOWER_PATH, "org.freedesktop.UPower",
+                          QDBusConnection::systemBus());
 
     if (!upower.isValid()) {
         return QString();
@@ -34,21 +30,17 @@ QString UPowerHelper::findBatteryDevice()
         QString devicePath = path.path();
 
         // Check if this is a battery device
-        QDBusInterface device(
-            UPOWER_SERVICE,
-            devicePath,
-            "org.freedesktop.DBus.Properties",
-            QDBusConnection::systemBus()
-        );
+        QDBusInterface device(UPOWER_SERVICE, devicePath, "org.freedesktop.DBus.Properties",
+                              QDBusConnection::systemBus());
 
-        QDBusReply<QVariant> typeReply = device.call("Get", "org.freedesktop.UPower.Device", "Type");
+        QDBusReply<QVariant> typeReply =
+            device.call("Get", "org.freedesktop.UPower.Device", "Type");
         if (typeReply.isValid()) {
             // Type 2 = Battery
             if (typeReply.value().toUInt() == 2) {
                 // Verify it's a real battery (not a peripheral)
-                QDBusReply<QVariant> powerSupplyReply = device.call(
-                    "Get", "org.freedesktop.UPower.Device", "PowerSupply"
-                );
+                QDBusReply<QVariant> powerSupplyReply =
+                    device.call("Get", "org.freedesktop.UPower.Device", "PowerSupply");
                 if (powerSupplyReply.isValid() && powerSupplyReply.value().toBool()) {
                     return devicePath;
                 }
@@ -57,21 +49,16 @@ QString UPowerHelper::findBatteryDevice()
     }
 
     // Fallback to common paths
-    QStringList fallbackPaths = {
-        "/org/freedesktop/UPower/devices/battery_BAT0",
-        "/org/freedesktop/UPower/devices/battery_BAT1",
-        "/org/freedesktop/UPower/devices/battery_CMB0"
-    };
+    QStringList fallbackPaths = {"/org/freedesktop/UPower/devices/battery_BAT0",
+                                 "/org/freedesktop/UPower/devices/battery_BAT1",
+                                 "/org/freedesktop/UPower/devices/battery_CMB0"};
 
     for (const QString &path : fallbackPaths) {
-        QDBusInterface device(
-            UPOWER_SERVICE,
-            path,
-            "org.freedesktop.DBus.Properties",
-            QDBusConnection::systemBus()
-        );
+        QDBusInterface device(UPOWER_SERVICE, path, "org.freedesktop.DBus.Properties",
+                              QDBusConnection::systemBus());
         if (device.isValid()) {
-            QDBusReply<QVariant> reply = device.call("Get", "org.freedesktop.UPower.Device", "IsPresent");
+            QDBusReply<QVariant> reply =
+                device.call("Get", "org.freedesktop.UPower.Device", "IsPresent");
             if (reply.isValid() && reply.value().toBool()) {
                 return path;
             }
@@ -81,19 +68,14 @@ QString UPowerHelper::findBatteryDevice()
     return QString();
 }
 
-std::optional<UPowerHelper::BatteryInfo> UPowerHelper::getBatteryInfo(const QString &devicePath)
-{
+std::optional<UPowerHelper::BatteryInfo> UPowerHelper::getBatteryInfo(const QString &devicePath) {
     QString path = devicePath.isEmpty() ? findBatteryDevice() : devicePath;
     if (path.isEmpty()) {
         return std::nullopt;
     }
 
-    QDBusInterface device(
-        UPOWER_SERVICE,
-        path,
-        "org.freedesktop.DBus.Properties",
-        QDBusConnection::systemBus()
-    );
+    QDBusInterface device(UPOWER_SERVICE, path, "org.freedesktop.DBus.Properties",
+                          QDBusConnection::systemBus());
 
     if (!device.isValid()) {
         return std::nullopt;
@@ -102,7 +84,8 @@ std::optional<UPowerHelper::BatteryInfo> UPowerHelper::getBatteryInfo(const QStr
     BatteryInfo info;
     info.devicePath = path;
 
-    QDBusReply<QVariant> percentReply = device.call("Get", "org.freedesktop.UPower.Device", "Percentage");
+    QDBusReply<QVariant> percentReply =
+        device.call("Get", "org.freedesktop.UPower.Device", "Percentage");
     if (percentReply.isValid()) {
         info.percentage = static_cast<int>(percentReply.value().toDouble());
     }
@@ -112,7 +95,8 @@ std::optional<UPowerHelper::BatteryInfo> UPowerHelper::getBatteryInfo(const QStr
         info.state = stateReply.value().toUInt();
     }
 
-    QDBusReply<QVariant> presentReply = device.call("Get", "org.freedesktop.UPower.Device", "IsPresent");
+    QDBusReply<QVariant> presentReply =
+        device.call("Get", "org.freedesktop.UPower.Device", "IsPresent");
     if (presentReply.isValid()) {
         info.isPresent = presentReply.value().toBool();
     }
@@ -120,25 +104,24 @@ std::optional<UPowerHelper::BatteryInfo> UPowerHelper::getBatteryInfo(const QStr
     return info;
 }
 
-QStringList UPowerHelper::getAvailablePowerProfiles()
-{
+QStringList UPowerHelper::getAvailablePowerProfiles() {
     QStringList profiles;
 
-    QDBusInterface powerProfiles(
-        POWER_PROFILES_SERVICE,
-        POWER_PROFILES_PATH,
-        "org.freedesktop.DBus.Properties",
-        QDBusConnection::systemBus()
-    );
+    QDBusInterface powerProfiles(POWER_PROFILES_SERVICE, POWER_PROFILES_PATH,
+                                 "org.freedesktop.DBus.Properties", QDBusConnection::systemBus());
 
     if (!powerProfiles.isValid()) {
         // Fallback to standard profiles if daemon not available
-        return QStringList() << "power-saver" << "balanced" << "performance";
+        return QStringList() << "power-saver"
+                             << "balanced"
+                             << "performance";
     }
 
     QDBusReply<QVariant> reply = powerProfiles.call("Get", "net.hadess.PowerProfiles", "Profiles");
     if (!reply.isValid()) {
-        return QStringList() << "power-saver" << "balanced" << "performance";
+        return QStringList() << "power-saver"
+                             << "balanced"
+                             << "performance";
     }
 
     // Parse the array of dictionaries
@@ -161,26 +144,24 @@ QStringList UPowerHelper::getAvailablePowerProfiles()
     arg.endArray();
 
     if (profiles.isEmpty()) {
-        return QStringList() << "power-saver" << "balanced" << "performance";
+        return QStringList() << "power-saver"
+                             << "balanced"
+                             << "performance";
     }
 
     return profiles;
 }
 
-QString UPowerHelper::getActivePowerProfile()
-{
-    QDBusInterface powerProfiles(
-        POWER_PROFILES_SERVICE,
-        POWER_PROFILES_PATH,
-        "org.freedesktop.DBus.Properties",
-        QDBusConnection::systemBus()
-    );
+QString UPowerHelper::getActivePowerProfile() {
+    QDBusInterface powerProfiles(POWER_PROFILES_SERVICE, POWER_PROFILES_PATH,
+                                 "org.freedesktop.DBus.Properties", QDBusConnection::systemBus());
 
     if (!powerProfiles.isValid()) {
         return QObject::tr("Unknown");
     }
 
-    QDBusReply<QVariant> reply = powerProfiles.call("Get", "net.hadess.PowerProfiles", "ActiveProfile");
+    QDBusReply<QVariant> reply =
+        powerProfiles.call("Get", "net.hadess.PowerProfiles", "ActiveProfile");
     if (!reply.isValid()) {
         return QObject::tr("Unknown");
     }
@@ -188,40 +169,33 @@ QString UPowerHelper::getActivePowerProfile()
     return reply.value().toString();
 }
 
-bool UPowerHelper::setActivePowerProfile(const QString &profile)
-{
-    QDBusInterface powerProfiles(
-        POWER_PROFILES_SERVICE,
-        POWER_PROFILES_PATH,
-        "org.freedesktop.DBus.Properties",
-        QDBusConnection::systemBus()
-    );
+bool UPowerHelper::setActivePowerProfile(const QString &profile) {
+    QDBusInterface powerProfiles(POWER_PROFILES_SERVICE, POWER_PROFILES_PATH,
+                                 "org.freedesktop.DBus.Properties", QDBusConnection::systemBus());
 
     if (!powerProfiles.isValid()) {
         return false;
     }
 
-    QDBusMessage reply = powerProfiles.call(
-        "Set",
-        "net.hadess.PowerProfiles",
-        "ActiveProfile",
-        QVariant::fromValue(QDBusVariant(profile))
-    );
+    QDBusMessage reply = powerProfiles.call("Set", "net.hadess.PowerProfiles", "ActiveProfile",
+                                            QVariant::fromValue(QDBusVariant(profile)));
 
     return reply.type() != QDBusMessage::ErrorMessage;
 }
 
-UPowerHelper::PowerConfig UPowerHelper::readPowerConfig()
-{
+UPowerHelper::PowerConfig UPowerHelper::readPowerConfig() {
     PowerConfig config;
 
     // Regular expressions for parsing config files
     static const QRegularExpression percentageLowRe("^PercentageLow\\s*=\\s*(\\d+(?:\\.\\d+)?)");
-    static const QRegularExpression percentageCriticalRe("^PercentageCritical\\s*=\\s*(\\d+(?:\\.\\d+)?)");
-    static const QRegularExpression percentageActionRe("^PercentageAction\\s*=\\s*(\\d+(?:\\.\\d+)?)");
+    static const QRegularExpression percentageCriticalRe(
+        "^PercentageCritical\\s*=\\s*(\\d+(?:\\.\\d+)?)");
+    static const QRegularExpression percentageActionRe(
+        "^PercentageAction\\s*=\\s*(\\d+(?:\\.\\d+)?)");
     static const QRegularExpression criticalActionRe("^CriticalPowerAction\\s*=\\s*(\\w+)");
     static const QRegularExpression handleLidSwitchRe("^HandleLidSwitch\\s*=\\s*(\\w+)");
-    static const QRegularExpression handleLidSwitchExternalRe("^HandleLidSwitchExternalPower\\s*=\\s*(\\w+)");
+    static const QRegularExpression handleLidSwitchExternalRe(
+        "^HandleLidSwitchExternalPower\\s*=\\s*(\\w+)");
 
     // Read UPower config
     QFile upowerFile("/etc/UPower/UPower.conf");
@@ -229,7 +203,8 @@ UPowerHelper::PowerConfig UPowerHelper::readPowerConfig()
         QTextStream in(&upowerFile);
         while (!in.atEnd()) {
             QString line = in.readLine().trimmed();
-            if (line.startsWith('#') || line.isEmpty()) continue;
+            if (line.startsWith('#') || line.isEmpty())
+                continue;
 
             QRegularExpressionMatch match;
 
@@ -252,7 +227,8 @@ UPowerHelper::PowerConfig UPowerHelper::readPowerConfig()
         QTextStream in(&logindFile);
         while (!in.atEnd()) {
             QString line = in.readLine().trimmed();
-            if (line.startsWith('#') || line.isEmpty()) continue;
+            if (line.startsWith('#') || line.isEmpty())
+                continue;
 
             QRegularExpressionMatch match;
 

@@ -1,4 +1,5 @@
 #include "batteryicon.h"
+
 #include <QPainter>
 #include <QPixmap>
 #include <QPolygon>
@@ -7,8 +8,7 @@ const QColor BatteryIcon::COLOR_GREEN(50, 200, 50);
 const QColor BatteryIcon::COLOR_AMBER(220, 180, 50);
 const QColor BatteryIcon::COLOR_RED(220, 50, 50);
 
-QColor BatteryIcon::getColor(int percentage, const Thresholds &thresholds)
-{
+QColor BatteryIcon::getColor(int percentage, const Thresholds &thresholds) {
     if (percentage <= thresholds.critical) {
         return COLOR_RED;
     } else if (percentage <= thresholds.low) {
@@ -17,8 +17,7 @@ QColor BatteryIcon::getColor(int percentage, const Thresholds &thresholds)
     return COLOR_GREEN;
 }
 
-QColor BatteryIcon::getOutlineColor(int percentage, const Thresholds &thresholds)
-{
+QColor BatteryIcon::getOutlineColor(int percentage, const Thresholds &thresholds) {
     if (percentage <= thresholds.critical) {
         return COLOR_RED;
     } else if (percentage <= thresholds.low) {
@@ -27,8 +26,7 @@ QColor BatteryIcon::getOutlineColor(int percentage, const Thresholds &thresholds
     return Qt::white;
 }
 
-QIcon BatteryIcon::create(int size, int percentage, bool charging, const Thresholds &thresholds)
-{
+QIcon BatteryIcon::create(int size, int percentage, bool charging, const Thresholds &thresholds) {
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
 
@@ -57,8 +55,8 @@ QIcon BatteryIcon::create(int size, int percentage, bool charging, const Thresho
     painter.drawRoundedRect(bodyLeft, bodyTop, bodyWidth, bodyHeight, cornerRadius, cornerRadius);
 
     // Draw battery tip (positive terminal)
-    painter.fillRect(bodyLeft + bodyWidth, bodyTop + (bodyHeight - tipHeight) / 2,
-                     tipWidth, tipHeight, outlineColor);
+    painter.fillRect(bodyLeft + bodyWidth, bodyTop + (bodyHeight - tipHeight) / 2, tipWidth,
+                     tipHeight, outlineColor);
 
     // Calculate fill dimensions
     const int fillMargin = static_cast<int>(2 * scale);
@@ -67,8 +65,7 @@ QIcon BatteryIcon::create(int size, int percentage, bool charging, const Thresho
     const int fillHeight = bodyHeight - 2 * fillMargin;
 
     // Draw fill
-    painter.fillRect(bodyLeft + fillMargin, bodyTop + fillMargin,
-                     fillWidth, fillHeight, fillColor);
+    painter.fillRect(bodyLeft + fillMargin, bodyTop + fillMargin, fillWidth, fillHeight, fillColor);
 
     // Draw charging indicator (lightning bolt)
     if (charging) {

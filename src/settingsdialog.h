@@ -1,12 +1,11 @@
 #ifndef SETTINGSDIALOG_H
 #define SETTINGSDIALOG_H
 
+#include <QComboBox>
 #include <QDialog>
 #include <QLabel>
-#include <QComboBox>
 
-class SettingsDialog : public QDialog
-{
+class SettingsDialog : public QDialog {
     Q_OBJECT
 
 public:
@@ -23,4 +22,4 @@ private:
     QComboBox *profileCombo;
 };
 
-#endif // SETTINGSDIALOG_H
+#endif  // SETTINGSDIALOG_H

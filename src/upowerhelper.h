@@ -1,17 +1,17 @@
 #ifndef UPOWERHELPER_H
 #define UPOWERHELPER_H
 
+#include <QDBusInterface>
 #include <QString>
 #include <QStringList>
-#include <QDBusInterface>
+
 #include <optional>
 
 /**
  * Helper class for UPower and power-profiles-daemon DBus interactions.
  * Provides dynamic device detection and error handling.
  */
-class UPowerHelper
-{
+class UPowerHelper {
 public:
     struct BatteryInfo {
         QString devicePath;
@@ -78,4 +78,4 @@ private:
     static const QString POWER_PROFILES_PATH;
 };
 
-#endif // UPOWERHELPER_H
+#endif  // UPOWERHELPER_H

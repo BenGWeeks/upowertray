@@ -1,15 +1,14 @@
 #ifndef BATTERYICON_H
 #define BATTERYICON_H
 
-#include <QIcon>
 #include <QColor>
+#include <QIcon>
 
 /**
  * Shared battery icon rendering utility.
  * Eliminates duplicate icon rendering code between BatteryTray and SettingsDialog.
  */
-class BatteryIcon
-{
+class BatteryIcon {
 public:
     struct Thresholds {
         int low = 20;
@@ -48,4 +47,4 @@ private:
     static const QColor COLOR_RED;
 };
 
-#endif // BATTERYICON_H
+#endif  // BATTERYICON_H

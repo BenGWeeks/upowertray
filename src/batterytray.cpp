@@ -1,21 +1,22 @@
 #include "batterytray.h"
-#include "settingsdialog.h"
+
 #include "batteryicon.h"
+#include "settingsdialog.h"
 #include "upowerhelper.h"
+
 #include <QApplication>
 
 BatteryTray::BatteryTray(QObject *parent)
-    : QObject(parent)
-    , trayIcon(nullptr)
-    , trayMenu(nullptr)
-    , updateTimer(nullptr)
-    , lastPercentage(-1)
-    , lastCharging(false)
-    , lowBatteryWarningShown(false)
-    , criticalBatteryWarningShown(false)
-    , lowBatteryThreshold(20)
-    , criticalBatteryThreshold(5)
-{
+    : QObject(parent),
+      trayIcon(nullptr),
+      trayMenu(nullptr),
+      updateTimer(nullptr),
+      lastPercentage(-1),
+      lastCharging(false),
+      lowBatteryWarningShown(false),
+      criticalBatteryWarningShown(false),
+      lowBatteryThreshold(20),
+      criticalBatteryThreshold(5) {
     loadSystemSettings();
     findBatteryDevice();
     createMenu();
@@ -32,24 +33,19 @@ BatteryTray::BatteryTray(QObject *parent)
     trayIcon->show();
 }
 
-BatteryTray::~BatteryTray()
-{
-}
+BatteryTray::~BatteryTray() {}
 
-void BatteryTray::loadSystemSettings()
-{
+void BatteryTray::loadSystemSettings() {
     auto config = UPowerHelper::readPowerConfig();
     lowBatteryThreshold = config.percentageLow;
     criticalBatteryThreshold = config.percentageCritical;
 }
 
-void BatteryTray::findBatteryDevice()
-{
+void BatteryTray::findBatteryDevice() {
     batteryDevicePath = UPowerHelper::findBatteryDevice();
 }
 
-void BatteryTray::createMenu()
-{
+void BatteryTray::createMenu() {
     trayMenu = new QMenu();
 
     QAction *settingsAction = trayMenu->addAction(tr("Power Settings..."));
@@ -61,17 +57,14 @@ void BatteryTray::createMenu()
     connect(quitAction, &QAction::triggered, this, &BatteryTray::quit);
 }
 
-void BatteryTray::createTrayIcon()
-{
+void BatteryTray::createTrayIcon() {
     trayIcon = new QSystemTrayIcon(this);
     trayIcon->setContextMenu(trayMenu);
 
-    connect(trayIcon, &QSystemTrayIcon::activated,
-            this, &BatteryTray::onActivated);
+    connect(trayIcon, &QSystemTrayIcon::activated, this, &BatteryTray::onActivated);
 }
 
-void BatteryTray::updateBattery()
-{
+void BatteryTray::updateBattery() {
     auto batteryInfo = UPowerHelper::getBatteryInfo(batteryDevicePath);
 
     if (!batteryInfo.has_value()) {
@@ -106,8 +99,8 @@ void BatteryTray::updateBattery()
     }
 
     // Update tooltip
-    trayIcon->setToolTip(tr("Battery: %1% (%2)\nPower: %3")
-        .arg(percentage).arg(stateStr).arg(powerProfile));
+    trayIcon->setToolTip(
+        tr("Battery: %1% (%2)\nPower: %3").arg(percentage).arg(stateStr).arg(powerProfile));
 
     // Check for low battery warnings (only when discharging)
     if (!charging && !fullyCharged) {
@@ -132,40 +125,38 @@ void BatteryTray::updateBattery()
     lastCharging = charging || fullyCharged;
 }
 
-void BatteryTray::showLowBatteryNotification(int percentage)
-{
+void BatteryTray::showLowBatteryNotification(int percentage) {
     QString title;
     QString message;
     QSystemTrayIcon::MessageIcon icon;
 
     if (percentage <= criticalBatteryThreshold) {
         title = tr("Critical Battery Warning");
-        message = tr("Battery level is critically low at %1%!\nPlug in your charger immediately.").arg(percentage);
+        message = tr("Battery level is critically low at %1%!\nPlug in your charger immediately.")
+                      .arg(percentage);
         icon = QSystemTrayIcon::Critical;
     } else {
         title = tr("Low Battery Warning");
-        message = tr("Battery level is low at %1%.\nConsider plugging in your charger.").arg(percentage);
+        message =
+            tr("Battery level is low at %1%.\nConsider plugging in your charger.").arg(percentage);
         icon = QSystemTrayIcon::Warning;
     }
 
     trayIcon->showMessage(title, message, icon, 10000);
 }
 
-void BatteryTray::onActivated(QSystemTrayIcon::ActivationReason reason)
-{
+void BatteryTray::onActivated(QSystemTrayIcon::ActivationReason reason) {
     if (reason == QSystemTrayIcon::Trigger) {
         // Left click - open settings
         showSettings();
     }
 }
 
-void BatteryTray::quit()
-{
+void BatteryTray::quit() {
     QApplication::quit();
 }
 
-void BatteryTray::showSettings()
-{
+void BatteryTray::showSettings() {
     SettingsDialog dialog(lastPercentage, lastCharging);
     dialog.exec();
 }

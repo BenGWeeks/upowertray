@@ -1,21 +1,22 @@
 #include "settingsdialog.h"
+
 #include "batteryicon.h"
 #include "upowerhelper.h"
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QPushButton>
+
+#include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QFrame>
 #include <QGroupBox>
-#include <QDesktopServices>
-#include <QUrl>
+#include <QHBoxLayout>
 #include <QProcess>
+#include <QPushButton>
 #include <QStandardPaths>
+#include <QUrl>
+#include <QVBoxLayout>
 
 SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *parent)
-    : QDialog(parent)
-{
+    : QDialog(parent) {
     setWindowTitle(tr("upowertray - Power Settings"));
     setMinimumWidth(400);
 
@@ -39,9 +40,10 @@ SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *paren
     batteryIconLabel->setPixmap(batteryIcon.pixmap(64, 64));
     batteryLayout->addWidget(batteryIconLabel);
 
-    QString statusText = QString("<b style='font-size: 24px;'>%1%</b><br><span style='font-size: 14px;'>%2</span>")
-        .arg(batteryPercent)
-        .arg(charging ? tr("Charging") : tr("Discharging"));
+    QString statusText =
+        QString("<b style='font-size: 24px;'>%1%</b><br><span style='font-size: 14px;'>%2</span>")
+            .arg(batteryPercent)
+            .arg(charging ? tr("Charging") : tr("Discharging"));
     batteryTextLabel = new QLabel(statusText, this);
     batteryLayout->addWidget(batteryTextLabel);
 
@@ -66,9 +68,8 @@ SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *paren
     auto *actionGroup = new QGroupBox(tr("Battery Critical Action (UPower)"), this);
     auto *actionLayout = new QFormLayout(actionGroup);
 
-    auto *actionLabel = new QLabel(QString("<b>%1</b> at %2%")
-        .arg(config.criticalAction)
-        .arg(config.percentageAction), this);
+    auto *actionLabel = new QLabel(
+        QString("<b>%1</b> at %2%").arg(config.criticalAction).arg(config.percentageAction), this);
     actionLayout->addRow(tr("Action:"), actionLabel);
 
     layout->addWidget(actionGroup);
@@ -80,7 +81,8 @@ SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *paren
     auto *lidBatteryLabel = new QLabel(QString("<b>%1</b>").arg(config.handleLidSwitch), this);
     lidLayout->addRow(tr("On battery:"), lidBatteryLabel);
 
-    auto *lidPowerLabel = new QLabel(QString("<b>%1</b>").arg(config.handleLidSwitchExternalPower), this);
+    auto *lidPowerLabel =
+        new QLabel(QString("<b>%1</b>").arg(config.handleLidSwitchExternalPower), this);
     lidLayout->addRow(tr("On AC power:"), lidPowerLabel);
 
     layout->addWidget(lidGroup);
@@ -107,8 +109,8 @@ SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *paren
     if (currentIndex >= 0) {
         profileCombo->setCurrentIndex(currentIndex);
     }
-    connect(profileCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &SettingsDialog::onPowerProfileChanged);
+    connect(profileCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &SettingsDialog::onPowerProfileChanged);
     profileLayout->addRow(tr("Current profile:"), profileCombo);
 
     layout->addWidget(profileGroup);
@@ -141,24 +143,18 @@ SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *paren
     setLayout(layout);
 }
 
-void SettingsDialog::onPowerProfileChanged(int index)
-{
+void SettingsDialog::onPowerProfileChanged(int index) {
     QString profile = profileCombo->itemData(index).toString();
     UPowerHelper::setActivePowerProfile(profile);
 }
 
-void SettingsDialog::openGitHubIssues()
-{
+void SettingsDialog::openGitHubIssues() {
     QDesktopServices::openUrl(QUrl("https://github.com/BenGWeeks/upowertray/issues"));
 }
 
-void SettingsDialog::openConfigEditor()
-{
+void SettingsDialog::openConfigEditor() {
     // Config files to edit (use admin:// protocol for KDE apps on Wayland)
-    QStringList configFiles = {
-        "/etc/systemd/logind.conf",
-        "/etc/UPower/UPower.conf"
-    };
+    QStringList configFiles = {"/etc/systemd/logind.conf", "/etc/UPower/UPower.conf"};
 
     // Check if kate is available (supports admin:// KIO for root access)
     QString kate = QStandardPaths::findExecutable("kate");

@@ -1,13 +1,12 @@
 #ifndef BATTERYTRAY_H
 #define BATTERYTRAY_H
 
+#include <QMenu>
 #include <QObject>
 #include <QSystemTrayIcon>
-#include <QMenu>
 #include <QTimer>
 
-class BatteryTray : public QObject
-{
+class BatteryTray : public QObject {
     Q_OBJECT
 
 public:
@@ -41,7 +40,7 @@ private:
     // Read from UPower config
     int lowBatteryThreshold;
     int criticalBatteryThreshold;
-    static constexpr int UPDATE_INTERVAL_MS = 30000; // 30 seconds
+    static constexpr int UPDATE_INTERVAL_MS = 30000;  // 30 seconds
 };
 
-#endif // BATTERYTRAY_H
+#endif  // BATTERYTRAY_H

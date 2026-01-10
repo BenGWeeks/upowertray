@@ -1,11 +1,11 @@
-#include <QApplication>
-#include <QTranslator>
-#include <QLocale>
-#include <QLibraryInfo>
 #include "batterytray.h"
 
-int main(int argc, char *argv[])
-{
+#include <QApplication>
+#include <QLibraryInfo>
+#include <QLocale>
+#include <QTranslator>
+
+int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setApplicationName("upowertray");
     app.setApplicationVersion("1.1.0");
