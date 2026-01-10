@@ -1,4 +1,4 @@
-# upowertray
+![upowertray](docs/logo.svg)
 
 A simple, lightweight battery tray indicator for Linux using UPower. Works natively with KDE Plasma on Wayland.
 
