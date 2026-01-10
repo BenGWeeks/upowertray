@@ -23,6 +23,16 @@ Existing alternatives like `cbatticon` and `fdpowermon` use GTK and the legacy X
 - Updates every 30 seconds
 - Left-click to force update
 
+## Icon Preview
+
+![Battery icon states](docs/icon-preview.svg)
+
+The icon changes color based on battery level:
+- **Green**: Above 20%
+- **Yellow**: 10-20%
+- **Red**: Below 10%
+- **Lightning bolt**: Charging
+
 ## Dependencies
 
 - Qt6 (Core, Gui, Widgets, DBus)
