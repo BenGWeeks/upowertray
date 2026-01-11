@@ -1,7 +1,7 @@
 Source: upowertray
 Section: utils
 Priority: optional
-Maintainer: Ben Weeks <ben@zebracat.uk>
+Maintainer: Ben Weeks <ben.weeks@outlook.com>
 Build-Depends: debhelper-compat (= 13), cmake, qt6-base-dev, libgl1-mesa-dev
 Standards-Version: 4.6.0
 Homepage: https://github.com/BenGWeeks/upowertray

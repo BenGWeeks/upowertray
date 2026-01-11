@@ -1,3 +1,11 @@
+upowertray (1.1.1-1) questing; urgency=medium
+
+  * Add debian packaging for Ubuntu PPA
+  * Add PKGBUILD for Arch AUR
+  * Update documentation
+
+ -- Ben Weeks <ben.weeks@outlook.com>  Sat, 11 Jan 2026 12:40:00 +0000
+
 upowertray (1.1.0-1) noble; urgency=medium
 
   * Initial PPA release
@@ -7,4 +15,4 @@ upowertray (1.1.0-1) noble; urgency=medium
   * Dynamic battery detection
   * Unit tests and CI/CD pipeline
 
- -- Ben Weeks <ben@zebracat.uk>  Sat, 11 Jan 2026 01:00:00 +0000
+ -- Ben Weeks <ben.weeks@outlook.com>  Sat, 11 Jan 2026 01:00:00 +0000

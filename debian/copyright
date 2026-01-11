@@ -1,10 +1,10 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: upowertray
-Upstream-Contact: Ben Weeks <ben@zebracat.uk>
+Upstream-Contact: Ben Weeks <ben.weeks@outlook.com>
 Source: https://github.com/BenGWeeks/upowertray
 
 Files: *
-Copyright: 2026 Ben Weeks <ben@zebracat.uk>
+Copyright: 2026 Ben Weeks <ben.weeks@outlook.com>
 License: MIT
 
 License: MIT
