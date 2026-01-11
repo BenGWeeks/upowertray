@@ -33,12 +33,12 @@ jobs:
     - name: Create tarball
       run: |
         VERSION=${GITHUB_REF#refs/tags/v}
-        tar -czvf upowertray-${VERSION}-linux-x86_64.tar.gz \
-          -C build upowertray \
-          -C .. upowertray.desktop \
-          -C .. icons/upowertray.svg \
-          -C .. README.md \
-          -C .. LICENSE
+        mkdir -p release
+        cp build/upowertray release/
+        cp upowertray.desktop release/
+        cp icons/upowertray.svg release/
+        cp README.md LICENSE release/
+        tar -czvf upowertray-${VERSION}-linux-x86_64.tar.gz -C release .
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
