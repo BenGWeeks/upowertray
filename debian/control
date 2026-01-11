@@ -1,0 +1,24 @@
+Source: upowertray
+Section: utils
+Priority: optional
+Maintainer: Ben Weeks <ben@zebracat.uk>
+Build-Depends: debhelper-compat (= 13), cmake, qt6-base-dev, libgl1-mesa-dev
+Standards-Version: 4.6.0
+Homepage: https://github.com/BenGWeeks/upowertray
+Vcs-Browser: https://github.com/BenGWeeks/upowertray
+Vcs-Git: https://github.com/BenGWeeks/upowertray.git
+Rules-Requires-Root: no
+
+Package: upowertray
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Lightweight battery tray indicator for KDE Plasma
+ A Qt6-based battery tray indicator that works natively on KDE Plasma/Wayland
+ without interfering with systemd power management.
+ .
+ Features:
+  - Shows battery percentage with color-coded icon
+  - Charging indicator (lightning bolt overlay)
+  - Settings dialog with power profile control
+  - Configurable notification thresholds
+  - Multi-language support (English, Spanish)

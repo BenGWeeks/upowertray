@@ -1,0 +1,10 @@
+upowertray (1.1.0-1) noble; urgency=medium
+
+  * Initial PPA release
+  * Configurable notification thresholds
+  * Settings dialog with power profile control
+  * Multi-language support (English, Spanish)
+  * Dynamic battery detection
+  * Unit tests and CI/CD pipeline
+
+ -- Ben Weeks <ben@zebracat.uk>  Sat, 11 Jan 2026 01:00:00 +0000
