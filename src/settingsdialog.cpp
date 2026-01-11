@@ -198,10 +198,7 @@ void SettingsDialog::openConfigEditor() {
     }
 
     if (!terminal.isEmpty()) {
-        QStringList terminalArgs;
-        terminalArgs << "-e"
-                     << "sudo"
-                     << "nano" << configFiles[0] << configFiles[1];
+        QStringList terminalArgs{"-e", "sudo", "nano", configFiles[0], configFiles[1]};
         QProcess::startDetached(terminal, terminalArgs);
     }
 }
