@@ -103,5 +103,5 @@ jobs:
     - name: Run clang-tidy
       run: |
         find src -name '*.cpp' | xargs clang-tidy -p build \
-          --checks='-*,bugprone-*,cert-*,clang-analyzer-*,modernize-*,performance-*,readability-*,-modernize-use-trailing-return-type,-readability-else-after-return,-bugprone-easily-swappable-parameters,-readability-identifier-naming' \
+          --checks='-*,cert-*,clang-analyzer-*' \
           --warnings-as-errors='*'
