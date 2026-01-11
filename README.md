@@ -98,6 +98,14 @@ sudo apt update
 sudo apt install upowertray
 ```
 
+## Install from AUR (Arch Linux)
+
+```bash
+yay -S upowertray
+```
+
+Or with paru: `paru -S upowertray`
+
 ## Build from Source
 
 ```bash

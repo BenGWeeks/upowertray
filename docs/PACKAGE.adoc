@@ -226,7 +226,7 @@ jobs:
 
 == Next Steps
 
-1. [ ] Create GitHub release for v1.0.0
-2. [ ] Submit to AUR
-3. [ ] Set up PPA for Ubuntu
+1. [x] Create GitHub release for v1.1.0
+2. [x] Submit to AUR - https://aur.archlinux.org/packages/upowertray
+3. [x] Set up PPA for Ubuntu - https://launchpad.net/~bengweeks/+archive/ubuntu/upowertray
 4. [ ] Consider Flatpak for universal support
