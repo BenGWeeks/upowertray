@@ -18,11 +18,13 @@
   </a>
 </p>
 
-A simple, lightweight battery tray indicator for Linux using UPower. Works natively with KDE Plasma on Wayland.
+A lightweight battery status icon for laptop system trays. Works on **KDE Plasma**, **LXQt**, **XFCE**, **Cinnamon**, and **MATE** (both X11 and Wayland) without interfering with systemd power management or power-profiles-daemon.
+
+**Alternative to PowerDevil, xfce4-power-manager, or mate-power-manager** for users who want systemd-logind to handle lid-close, suspend, and hibernate actions. Useful when your battery icon is missing after disabling other power managers.
 
 ## Why?
 
-KDE Plasma's built-in battery indicator is tied to PowerDevil. If you disable PowerDevil (e.g., to let systemd-logind handle lid-close hibernate), the battery icon disappears.
+Desktop power managers like PowerDevil and xfce4-power-manager bundle the battery indicator with power management. If you disable them (e.g., to let systemd-logind handle lid-close hibernate), the battery icon disappears.
 
 Existing alternatives like `cbatticon` and `fdpowermon` use GTK and the legacy XEmbed protocol, which doesn't work on Wayland (KDE uses StatusNotifierItem).
 
@@ -33,11 +35,13 @@ Existing alternatives like `cbatticon` and `fdpowermon` use GTK and the legacy X
 
 ## Features
 
-- Shows battery percentage with color-coded icon (green/yellow/red)
+- Battery percentage with color-coded icon (green/yellow/red)
 - Charging indicator (lightning bolt overlay)
+- Low battery notifications and warnings
 - Tooltip with current percentage, state, and power profile
 - Settings dialog showing system power settings (UPower + logind)
 - Power profile control (Power Saver / Balanced / Performance)
+- Configurable notification thresholds
 - Multi-language support (English, Spanish)
 - Updates every 30 seconds
 - Left-click to open settings dialog
