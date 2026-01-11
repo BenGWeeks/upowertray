@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          qt6-base-dev \
+          qt6-tools-dev \
+          qt6-tools-dev-tools \
+          qt6-l10n-tools \
+          libgl1-mesa-dev \
+          cmake \
+          build-essential
+
+    - name: Configure
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --parallel
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: upowertray-linux
+        path: build/upowertray
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          qt6-base-dev \
+          qt6-tools-dev \
+          qt6-tools-dev-tools \
+          qt6-l10n-tools \
+          libgl1-mesa-dev \
+          cmake \
+          build-essential \
+          xvfb
+
+    - name: Configure with tests
+      run: cmake -B build -DBUILD_TESTING=ON
+
+    - name: Build
+      run: cmake --build build --parallel
+
+    - name: Run tests
+      run: |
+        cd build
+        xvfb-run ctest --output-on-failure
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          qt6-base-dev \
+          libgl1-mesa-dev \
+          cmake \
+          clang-format \
+          clang-tidy \
+          cppcheck
+
+    - name: Configure (for compile_commands.json)
+      run: cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+    - name: Check formatting
+      run: |
+        find src -name '*.cpp' -o -name '*.h' | xargs clang-format --dry-run --Werror
+
+    - name: Run cppcheck
+      run: |
+        cppcheck --enable=warning,style,performance,portability \
+          --suppress=missingIncludeSystem \
+          --suppress=unknownMacro \
+          --error-exitcode=1 \
+          src/
+
+    - name: Run clang-tidy
+      run: |
+        find src -name '*.cpp' | xargs clang-tidy -p build \
+          --checks='-*,clang-analyzer-*' \
+          --warnings-as-errors='*'

@@ -1,0 +1,191 @@
+= upowertray Installation Guide
+:toc:
+
+== Quick Install (Build from Source)
+
+[source,bash]
+----
+# Install dependencies (Ubuntu/Debian)
+sudo apt install qt6-base-dev libgl1-mesa-dev cmake build-essential
+
+# Clone and build
+git clone https://github.com/BenGWeeks/upowertray.git
+cd upowertray
+mkdir build && cd build
+cmake ..
+make
+
+# Install system-wide
+sudo make install
+
+# Or install for current user only
+cp upowertray ~/.local/bin/
+cp ../upowertray.desktop ~/.local/share/applications/
+----
+
+== Distribution-Specific Dependencies
+
+=== Ubuntu/Debian
+
+[source,bash]
+----
+sudo apt install qt6-base-dev libgl1-mesa-dev cmake build-essential
+----
+
+=== Fedora
+
+[source,bash]
+----
+sudo dnf install qt6-qtbase-devel cmake gcc-c++
+----
+
+=== Arch Linux
+
+[source,bash]
+----
+sudo pacman -S qt6-base cmake
+----
+
+=== openSUSE
+
+[source,bash]
+----
+sudo zypper install qt6-base-devel cmake gcc-c++
+----
+
+== Build Options
+
+Standard build:
+
+[source,bash]
+----
+mkdir build && cd build
+cmake ..
+make
+----
+
+Debug build:
+
+[source,bash]
+----
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+make
+----
+
+Release build with optimizations:
+
+[source,bash]
+----
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make
+----
+
+== Installation Locations
+
+System-wide install (`sudo make install`):
+
+* Binary: `/usr/local/bin/upowertray`
+* Desktop file: `/usr/share/applications/upowertray.desktop`
+
+User install:
+
+* Binary: `~/.local/bin/upowertray`
+* Desktop file: `~/.local/share/applications/upowertray.desktop`
+
+== Autostart Configuration
+
+To start upowertray automatically at login:
+
+[source,bash]
+----
+# Copy desktop file to autostart directory
+cp /usr/share/applications/upowertray.desktop ~/.config/autostart/
+----
+
+Or create manually:
+
+[source,bash]
+----
+mkdir -p ~/.config/autostart
+cat > ~/.config/autostart/upowertray.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=upowertray
+Exec=upowertray
+Comment=Battery tray indicator
+Icon=battery
+Categories=System;
+X-KDE-autostart-phase=2
+EOF
+----
+
+=== Autostart with Custom Thresholds
+
+Edit the autostart file to include your preferred thresholds:
+
+[source,bash]
+----
+# Edit ~/.config/autostart/upowertray.desktop
+# Change Exec line to:
+Exec=upowertray --low 25 --critical 10
+----
+
+== Uninstallation
+
+If installed via `make install`:
+
+[source,bash]
+----
+cd build
+sudo make uninstall
+# Or manually:
+sudo rm /usr/local/bin/upowertray
+sudo rm /usr/share/applications/upowertray.desktop
+----
+
+Remove user configuration:
+
+[source,bash]
+----
+rm -rf ~/.config/upowertray
+rm ~/.config/autostart/upowertray.desktop
+----
+
+== Verifying Installation
+
+[source,bash]
+----
+# Check binary is in PATH
+which upowertray
+
+# Check version
+upowertray --version
+
+# Check help
+upowertray --help
+
+# Run manually to test
+upowertray
+----
+
+== Post-Installation
+
+=== Making the Icon Visible
+
+KDE Plasma may hide new tray icons by default:
+
+1. Right-click the system tray (bottom-right corner)
+2. Click "Configure System Tray..."
+3. Go to "Entries"
+4. Find "upowertray" and set to "Always visible"
+
+=== Configuring Thresholds
+
+Right-click the tray icon and select "Settings..." to configure warning thresholds.
+
+Or use command-line:
+
+[source,bash]
+----
+upowertray --low 25 --critical 10
+----

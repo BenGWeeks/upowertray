@@ -1,0 +1,514 @@
+= Hibernation Setup on ThinkPad
+:toc:
+:toclevels: 3
+
+This document describes how to configure hibernation on lid close for Ubuntu/KDE Plasma systems.
+
+== Critical Information for KDE Plasma Users
+
+**If you're using KDE Plasma, the most important step is disabling PowerDevil entirely.** Even when configured to "do nothing", PowerDevil holds a low-level `handle-lid-switch` inhibitor lock that prevents systemd-logind from handling lid events. This causes the system to suspend instead of hibernate regardless of your systemd configuration.
+
+See <<disable-powerdevil>> for details on disabling PowerDevil.
+
+== Problem Statement
+
+By default, closing the laptop lid triggers s2idle suspend, which drains 5-10% battery per day. This means the laptop can go from full charge to dead in just a few days when not in use. Hibernation saves the system state to disk and powers off completely, resulting in 0% battery drain.
+
+== Solution Overview
+
+Configure the system to hibernate (instead of suspend) when the laptop lid is closed. After hibernation:
+
+* System powers off completely (0% battery drain)
+* Open lid -> press power button -> session restores in 10-30 seconds
+* All applications and windows restored exactly as they were
+
+== Prerequisites
+
+* Swap partition or swapfile large enough to hold RAM contents (recommend: 1.5x RAM size)
+* Root/sudo access
+
+== Implementation Steps
+
+=== 1. Ensure Adequate Swap Space
+
+Check current swap:
+
+[source,bash]
+----
+swapon --show
+free -h
+----
+
+If swap is too small, expand it. For a swapfile on btrfs:
+
+[source,bash]
+----
+# Disable current swap
+sudo swapoff -a
+
+# Expand swapfile to 24GB (adjust for your RAM size)
+sudo truncate -s 0 /swap/swapfile
+sudo chattr +C /swap/swapfile
+sudo btrfs property set /swap/swapfile compression none
+sudo dd if=/dev/zero of=/swap/swapfile bs=1M count=24576 status=progress
+sudo chmod 600 /swap/swapfile
+sudo mkswap /swap/swapfile
+sudo swapon /swap/swapfile
+----
+
+Verify:
+
+[source,bash]
+----
+swapon --show
+----
+
+=== 2. Configure GRUB for Hibernation
+
+Find your swap device:
+
+[source,bash]
+----
+swapon --show
+----
+
+Get the resume parameters:
+
+**For swap partition:**
+
+[source,bash]
+----
+# Get partition UUID
+sudo blkid | grep swap
+
+# Add to GRUB_CMDLINE_LINUX_DEFAULT in /etc/default/grub:
+resume=UUID=<your-swap-uuid>
+----
+
+**For swapfile on btrfs:**
+
+[source,bash]
+----
+# Get physical offset
+sudo btrfs inspect-internal map-swapfile -r /swap/swapfile
+
+# Add to GRUB_CMDLINE_LINUX_DEFAULT in /etc/default/grub:
+resume=/dev/nvme0n1p2 resume_offset=<offset-number>
+----
+
+Edit GRUB config:
+
+[source,bash]
+----
+sudo nano /etc/default/grub
+----
+
+Example result:
+
+[source]
+----
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash resume=/dev/nvme0n1p2 resume_offset=123456"
+----
+
+Update GRUB:
+
+[source,bash]
+----
+sudo update-grub
+----
+
+Verify kernel resume device:
+
+[source,bash]
+----
+cat /sys/power/resume
+# Should show major:minor like 259:2
+
+cat /proc/cmdline
+# Should show resume parameters
+----
+
+=== 3. Test Hibernation
+
+Before configuring lid behavior, test hibernation manually:
+
+[source,bash]
+----
+systemctl hibernate
+----
+
+System should:
+
+1. Save state to disk (takes 10-30 seconds)
+2. Power off completely
+3. Press power button to restore
+4. Session restored exactly as before
+
+If this doesn't work, don't proceed - fix hibernation first.
+
+=== 4. Configure Systemd-Logind
+
+Edit `/etc/systemd/logind.conf`:
+
+[source,bash]
+----
+sudo nano /etc/systemd/logind.conf
+----
+
+Add/uncomment these lines:
+
+[source,ini]
+----
+HandleLidSwitch=hibernate
+HandleLidSwitchExternalPower=hibernate
+HandleLidSwitchDocked=hibernate
+LidSwitchIgnoreInhibited=yes
+----
+
+NOTE: Don't restart logind yet - it will log you out.
+
+=== 5. Configure Polkit to Allow Hibernation
+
+This is the critical step that's often missed. Systemd-logind needs polkit authorization to trigger hibernate.
+
+Create polkit rule:
+
+[source,bash]
+----
+sudo tee /etc/polkit-1/rules.d/85-hibernate.rules > /dev/null << 'EOF'
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.login1.hibernate" ||
+        action.id == "org.freedesktop.login1.hibernate-multiple-sessions") {
+        if (subject.isInGroup("sudo")) {
+            return polkit.Result.YES;
+        }
+    }
+});
+EOF
+----
+
+Restart polkit:
+
+[source,bash]
+----
+sudo systemctl restart polkit.service
+----
+
+Verify hibernate is now authorized:
+
+[source,bash]
+----
+busctl call org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager CanHibernate
+----
+
+Should return: `s "yes"`
+
+If it returns `s "no"`, the lid close will fall back to suspend instead of hibernate.
+
+[[disable-powerdevil]]
+=== 6. Disable KDE PowerDevil (KDE Plasma only) - CRITICAL!
+
+**This is the most critical step for KDE users.** PowerDevil takes a low-level `handle-lid-switch` inhibitor lock that completely prevents systemd-logind from handling lid events. The `LidSwitchIgnoreInhibited=yes` setting only applies to high-level inhibitors, NOT low-level ones like `handle-lid-switch`.
+
+When PowerDevil holds this lock, it intercepts lid close events before systemd can see them, and triggers suspend regardless of systemd's configuration.
+
+**Solution: Disable PowerDevil entirely:**
+
+[source,bash]
+----
+# Mask PowerDevil to prevent it from starting
+systemctl --user mask plasma-powerdevil.service
+
+# Stop PowerDevil if it's currently running
+systemctl --user stop plasma-powerdevil.service
+killall org_kde_powerdevil 2>/dev/null
+----
+
+Verify PowerDevil is no longer blocking:
+
+[source,bash]
+----
+systemd-inhibit --list --mode=block
+----
+
+Should show: `No inhibitors.`
+
+If you see PowerDevil with `handle-lid-switch` in the output, it's still running and will prevent hibernation from working.
+
+NOTE: Disabling PowerDevil means you lose KDE's power management GUI. All power management is now handled by systemd-logind via `/etc/systemd/logind.conf`. This is the only reliable way to make lid-close hibernation work on KDE Plasma.
+
+=== 7. Reboot and Apply Configuration
+
+To ensure logind reads the new configuration:
+
+[source,bash]
+----
+sudo reboot
+----
+
+After reboot, logind will be running with the hibernate configuration.
+
+=== 8. Disable Unnecessary Wakeup Devices
+
+Prevent the system from waking unexpectedly by disabling wakeup for devices that shouldn't wake the system:
+
+Check current wakeup devices:
+
+[source,bash]
+----
+cat /proc/acpi/wakeup
+----
+
+Create a script to disable unwanted devices:
+
+[source,bash]
+----
+sudo nano /usr/local/bin/disable-wakeup-devices.sh
+----
+
+Add:
+
+[source,bash]
+----
+#!/bin/bash
+# Disable wakeup devices only if they're currently enabled
+# Adjust device list for your system
+
+for device in GLAN PEG0 TXHC TDM0 TDM1 TRP0 TRP2; do
+    if grep -q "^${device}.*\*enabled" /proc/acpi/wakeup; then
+        echo "$device" > /proc/acpi/wakeup
+    fi
+done
+----
+
+Make executable:
+
+[source,bash]
+----
+sudo chmod +x /usr/local/bin/disable-wakeup-devices.sh
+----
+
+Create systemd service:
+
+[source,bash]
+----
+sudo nano /etc/systemd/system/disable-wakeup-devices.service
+----
+
+Add:
+
+[source,ini]
+----
+[Unit]
+Description=Disable unnecessary wakeup devices
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/disable-wakeup-devices.sh
+
+[Install]
+WantedBy=multi-user.target
+----
+
+Enable and start:
+
+[source,bash]
+----
+sudo systemctl daemon-reload
+sudo systemctl enable disable-wakeup-devices.service
+sudo systemctl start disable-wakeup-devices.service
+----
+
+Verify devices are disabled:
+
+[source,bash]
+----
+cat /proc/acpi/wakeup | grep -E "GLAN|PEG0|TXHC|TDM0|TDM1|TRP0|TRP2"
+----
+
+== Verification
+
+Check the complete configuration:
+
+[source,bash]
+----
+# Logind should show hibernate
+busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandleLidSwitch
+# Should return: s "hibernate"
+
+# Hibernate should be authorized
+busctl call org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager CanHibernate
+# Should return: s "yes"
+
+# CRITICAL: No inhibitor locks should be blocking lid switch
+systemd-inhibit --list --mode=block
+# Should return: "No inhibitors."
+# If you see PowerDevil with "handle-lid-switch", hibernation will NOT work!
+
+# Kernel resume device should be configured
+cat /sys/power/resume
+cat /proc/cmdline | grep resume
+----
+
+**All checks must pass for hibernation to work on lid close.**
+
+== Testing
+
+1. Save all work and close important applications (just in case)
+2. Close the laptop lid
+3. Wait 40-50 seconds for hibernation to complete
+4. Fan should stop (system off)
+5. Open the lid -> screen should be black
+6. Press the power button
+7. System should restore your session in 10-30 seconds
+
+== Troubleshooting
+
+=== Lid close suspends instead of hibernating
+
+Check the logs:
+
+[source,bash]
+----
+journalctl -b 0 --no-pager | grep -E "Lid closed|hibernate|suspend" | tail -20
+----
+
+If you see "The system will suspend now!" instead of hibernate:
+
+1. **MOST COMMON ISSUE: Check for inhibitor locks blocking systemd:**
++
+[source,bash]
+----
+systemd-inhibit --list --mode=block
+----
++
+If you see PowerDevil (or any other program) with `handle-lid-switch` in the WHAT column, it's intercepting lid events before systemd can handle them.
++
+**Fix:** Disable PowerDevil entirely:
++
+[source,bash]
+----
+systemctl --user mask plasma-powerdevil.service
+systemctl --user stop plasma-powerdevil.service
+killall org_kde_powerdevil 2>/dev/null
+----
++
+Then verify: `systemd-inhibit --list --mode=block` should show "No inhibitors."
+
+2. **Check if hibernate is authorized:**
++
+[source,bash]
+----
+busctl call org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager CanHibernate
+----
++
+If it returns `s "no"`, the polkit rule isn't working. Verify `/etc/polkit-1/rules.d/85-hibernate.rules` exists and restart polkit.
+
+3. **Check if logind is configured for hibernate:**
++
+[source,bash]
+----
+busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager HandleLidSwitch
+----
++
+Should return `s "hibernate"`. If not, check `/etc/systemd/logind.conf` and reboot.
+
+=== Hibernate fails or system won't resume
+
+1. **Check swap size:**
++
+[source,bash]
+----
+free -h
+swapon --show
+----
++
+Swap should be at least as large as RAM, preferably 1.5x.
+
+2. **Verify resume device in kernel:**
++
+[source,bash]
+----
+cat /sys/power/resume
+cat /proc/cmdline | grep resume
+----
++
+Resume device must match your swap partition.
+
+3. **Check kernel logs after failed resume:**
++
+[source,bash]
+----
+journalctl -b -1 | grep -i "resume\|hibernate"
+----
+
+=== Black screen after resume, can't login
+
+This indicates KWin (display manager) crashed. Check logs:
+
+[source,bash]
+----
+journalctl -b -1 | grep kwin_wayland
+----
+
+This is usually a graphics driver issue. May need to update GPU drivers or add kernel parameters for your graphics card.
+
+== How It Works
+
+1. User closes lid
+2. Kernel detects lid close via ACPI and creates event in `/dev/input/eventX`
+3. Systemd-logind monitors input devices and receives the lid close event
+4. Logind checks for inhibitor locks - with PowerDevil disabled, there are none
+5. Logind checks `HandleLidSwitch` setting -> configured for hibernate
+6. Logind checks polkit authorization -> allowed via `/etc/polkit-1/rules.d/85-hibernate.rules`
+7. Logind calls `systemctl hibernate`
+8. Systemd-hibernate service starts
+9. System writes RAM contents to swap partition/file (10-30 seconds)
+10. System powers off completely (0% power draw)
+11. User opens lid (no effect, system is powered off)
+12. User presses power button
+13. BIOS/UEFI starts, bootloader (GRUB) loads
+14. Kernel boots with `resume=` parameter pointing to swap
+15. Kernel detects hibernation image in swap and restores it
+16. System restores to exact state before hibernation (all apps, windows, etc.)
+
+**Key insight:** PowerDevil's `handle-lid-switch` inhibitor lock is a **low-level** lock that completely prevents logind from seeing lid events. `LidSwitchIgnoreInhibited=yes` only applies to **high-level** inhibitors (like media players preventing sleep), not low-level ones like `handle-lid-switch`. This is why PowerDevil must be completely disabled for hibernation on lid close to work.
+
+== Before vs After
+
+**Before:**
+
+* Close lid -> s2idle suspend -> 5-10% battery drain per day -> dead in a few days
+
+**After:**
+
+* Close lid -> hibernate -> 0% battery drain -> weeks/months on single charge
+
+== Key Files Modified
+
+* `/etc/default/grub` - Added resume parameters (kernel boot)
+* `/etc/systemd/logind.conf` - Configure lid behavior to hibernate
+* `/etc/polkit-1/rules.d/85-hibernate.rules` - Authorize hibernate (CRITICAL!)
+* `~/.config/systemd/user/plasma-powerdevil.service` - Symlink to /dev/null (disables PowerDevil)
+* `/usr/local/bin/disable-wakeup-devices.sh` - Wakeup device script
+* `/etc/systemd/system/disable-wakeup-devices.service` - Systemd service for wakeup devices
+
+== Common Pitfalls
+
+1. **PowerDevil running:** Most common issue. Even with `lidAction=0`, PowerDevil holds a `handle-lid-switch` inhibitor that prevents systemd from handling lid events. Must be completely disabled/masked.
+
+2. **Missing polkit rule:** Without the polkit rule, logind reports `CanHibernate=no` and falls back to suspend.
+
+3. **Not rebooting after logind.conf changes:** Logind must be restarted to pick up configuration changes. Restarting logind logs you out, so reboot is easiest.
+
+4. **Insufficient swap:** Hibernation will fail if swap is smaller than used RAM.
+
+5. **Wrong resume device:** If GRUB resume parameters don't match the actual swap device, kernel won't find the hibernation image.
+
+== References
+
+* `man logind.conf`
+* `man systemd-sleep.conf`
+* https://www.kernel.org/doc/html/latest/power/swsusp.html
+* https://wiki.archlinux.org/title/Power_management/Suspend_and_hibernate

@@ -1,15 +1,12 @@
 #ifndef BATTERYTRAY_H
 #define BATTERYTRAY_H
 
+#include <QMenu>
 #include <QObject>
 #include <QSystemTrayIcon>
-#include <QMenu>
 #include <QTimer>
-#include <QDBusInterface>
-#include <QDBusConnection>
 
-class BatteryTray : public QObject
-{
+class BatteryTray : public QObject {
     Q_OBJECT
 
 public:
@@ -19,26 +16,31 @@ public:
 private slots:
     void updateBattery();
     void onActivated(QSystemTrayIcon::ActivationReason reason);
+    void showSettings();
     void quit();
 
 private:
     void createTrayIcon();
     void createMenu();
-    QIcon createBatteryIcon(int percentage, bool charging);
     void showLowBatteryNotification(int percentage);
+    void loadSystemSettings();
+    void findBatteryDevice();
 
     QSystemTrayIcon *trayIcon;
     QMenu *trayMenu;
     QTimer *updateTimer;
-    QDBusInterface *upowerDevice;
+
+    QString batteryDevicePath;
 
     int lastPercentage;
+    bool lastCharging;
     bool lowBatteryWarningShown;
     bool criticalBatteryWarningShown;
 
-    static constexpr int LOW_BATTERY_THRESHOLD = 20;
-    static constexpr int CRITICAL_BATTERY_THRESHOLD = 5;
-    static constexpr int UPDATE_INTERVAL_MS = 30000; // 30 seconds
+    // Read from UPower config
+    int lowBatteryThreshold;
+    int criticalBatteryThreshold;
+    static constexpr int UPDATE_INTERVAL_MS = 30000;  // 30 seconds
 };
 
-#endif // BATTERYTRAY_H
+#endif  // BATTERYTRAY_H

@@ -1,0 +1,223 @@
+= upowertray Solution Architecture
+:toc:
+:toclevels: 2
+
+== Overview
+
+upowertray is a lightweight Qt6 system tray application that displays battery status on KDE Plasma/Wayland systems without interfering with systemd power management.
+
+== Problem Statement
+
+KDE Plasma's built-in battery indicator is tightly coupled to PowerDevil. Disabling PowerDevil (required for systemd-logind to handle lid-close hibernation) removes the battery icon entirely.
+
+Existing alternatives:
+
+* `cbatticon` - GTK-based, uses XEmbed protocol
+* `fdpowermon` - GTK-based, uses XEmbed protocol
+
+These don't work on Wayland because KDE uses the StatusNotifierItem (SNI) protocol instead of the legacy XEmbed/systray protocol.
+
+== Solution
+
+[source]
+----
+┌─────────────────────────────────────────────────────────────────┐
+│                        KDE Plasma Shell                          │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │                    System Tray                               │ │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐                   │ │
+│  │  │ Network  │  │  Sound   │  │upowertray│                   │ │
+│  │  └──────────┘  └──────────┘  └──────────┘                   │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+                              ▲
+                              │ StatusNotifierItem (DBus)
+                              │
+┌─────────────────────────────────────────────────────────────────┐
+│                        upowertray                                │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │QSystemTray- │  │  QTimer     │  │   SettingsDialog        │  │
+│  │Icon         │  │  (30s)      │  │   (QDialog)             │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+│         │                │                     │                 │
+│         ▼                ▼                     ▼                 │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │                    BatteryTray                               │ │
+│  │  - Creates/updates tray icon                                 │ │
+│  │  - Queries UPower via DBus                                   │ │
+│  │  - Shows notifications                                       │ │
+│  │  - Manages settings (QSettings)                              │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              │ DBus (System Bus)
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                          UPower                                  │
+│  /org/freedesktop/UPower/devices/battery_BAT0                   │
+│  - Percentage (double)                                          │
+│  - State (uint32: 1=charging, 2=discharging, 4=full)           │
+└─────────────────────────────────────────────────────────────────┘
+----
+
+== Key Components
+
+=== BatteryTray Class
+
+The main application class that:
+
+* Creates and manages the system tray icon via `QSystemTrayIcon`
+* Communicates with UPower via `QDBusInterface`
+* Draws battery icons dynamically with `QPainter`
+* Shows desktop notifications for low/critical battery
+* Manages user settings with `QSettings`
+
+=== SettingsDialog Class
+
+A simple `QDialog` that allows users to configure:
+
+* Low battery warning threshold (1-99%)
+* Critical battery warning threshold (1-99%)
+
+Validation ensures critical < low.
+
+=== Icon Rendering
+
+Battery icons are rendered programmatically:
+
+* Color-coded outline and fill based on percentage thresholds:
+** Green fill, white outline: > low threshold (default >20%)
+** Amber fill and outline: critical% to low% range (default 5-20%)
+** Red fill and outline: < critical threshold (default <5%)
+* Lightning bolt overlay when charging (white on green, green on amber/red)
+
+== Data Flow
+
+[source]
+----
+                    ┌──────────────┐
+                    │   Startup    │
+                    └──────┬───────┘
+                           │
+                           ▼
+              ┌────────────────────────┐
+              │ Load settings from     │
+              │ ~/.config/upowertray/  │
+              └───────────┬────────────┘
+                          │
+                          ▼
+              ┌────────────────────────┐
+              │ Connect to UPower DBus │
+              └───────────┬────────────┘
+                          │
+                          ▼
+              ┌────────────────────────┐
+              │ Start 30s update timer │
+              └───────────┬────────────┘
+                          │
+          ┌───────────────┴───────────────┐
+          │                               │
+          ▼                               ▼
+┌──────────────────┐            ┌──────────────────┐
+│ Timer fires or   │            │ User opens       │
+│ user left-clicks │            │ Settings dialog  │
+└────────┬─────────┘            └────────┬─────────┘
+         │                               │
+         ▼                               ▼
+┌──────────────────┐            ┌──────────────────┐
+│ Query UPower:    │            │ Update thresholds│
+│ - Percentage     │            │ Save to QSettings│
+│ - State          │            └──────────────────┘
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Update icon and  │
+│ tooltip          │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Check thresholds │
+│ Show notification│
+│ if needed        │
+└──────────────────┘
+----
+
+== Technology Choices
+
+=== Qt6 over GTK
+
+* `QSystemTrayIcon` automatically uses StatusNotifierItem on KDE
+* Native look and feel on KDE Plasma
+* No additional dependencies on a KDE system
+
+=== Direct UPower DBus vs libupower-glib
+
+* No additional library dependencies
+* Simple property queries via `org.freedesktop.DBus.Properties`
+* Full control over query frequency
+
+=== QSettings for Configuration
+
+* Standard Qt configuration storage
+* Cross-platform (though this app is Linux-only)
+* Automatic file management (`~/.config/upowertray/upowertray.conf`)
+
+== Non-Goals
+
+upowertray intentionally does NOT:
+
+* Take any systemd inhibitor locks
+* Control power management (that's systemd-logind's job)
+* Manage screen brightness
+* Handle suspend/hibernate actions
+* Replace PowerDevil functionality
+
+This separation of concerns is critical - the battery indicator should only display status, not control power management.
+
+== File Structure
+
+[source]
+----
+upowertray/
+├── CMakeLists.txt           # Build configuration
+├── src/
+│   ├── main.cpp             # Entry point, CLI argument parsing
+│   ├── batterytray.h        # BatteryTray class declaration
+│   ├── batterytray.cpp      # Main implementation
+│   ├── settingsdialog.h     # Settings dialog declaration
+│   └── settingsdialog.cpp   # Settings dialog implementation
+├── upowertray.desktop       # Desktop entry for autostart
+├── docs/
+│   ├── logo.svg             # ASCII art logo
+│   ├── icon-preview.svg     # Icon states preview
+│   ├── HIBERNATE.adoc       # Hibernation setup guide
+│   ├── INSTALLATION.adoc    # Installation guide
+│   ├── TROUBLESHOOTING.adoc # Troubleshooting guide
+│   └── SOLUTION_ARCHITECTURE.adoc  # This document
+├── README.md                # User documentation
+└── LICENSE                  # MIT License
+----
+
+== Dependencies
+
+[cols="1,1,2"]
+|===
+| Dependency | Version | Purpose
+
+| Qt6::Core | 6.x | Core functionality
+| Qt6::Gui | 6.x | Icon rendering
+| Qt6::Widgets | 6.x | System tray, dialogs
+| Qt6::DBus | 6.x | UPower communication
+| CMake | 3.16+ | Build system
+| UPower | Any | Battery status provider
+|===
+
+== Security Considerations
+
+* No elevated privileges required
+* No network access
+* No file system access except `~/.config/upowertray/`
+* Read-only access to UPower DBus interface
+* No inhibitor locks taken (won't affect system power management)
