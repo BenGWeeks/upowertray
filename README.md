@@ -90,7 +90,15 @@ sudo dnf install qt6-qtbase-devel qt6-linguist cmake gcc-c++
 sudo pacman -S qt6-base qt6-tools cmake
 ```
 
-## Build
+## Install from PPA (Ubuntu)
+
+```bash
+sudo add-apt-repository ppa:bengweeks/upowertray
+sudo apt update
+sudo apt install upowertray
+```
+
+## Build from Source
 
 ```bash
 git clone https://github.com/BenGWeeks/upowertray.git
