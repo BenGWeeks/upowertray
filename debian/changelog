@@ -1,3 +1,11 @@
+upowertray (1.1.2-1) questing; urgency=medium
+
+  * Improve package discoverability with better keywords
+  * Expand supported desktop environments in description
+  * Add support info for XFCE, LXQt, Cinnamon, MATE
+
+ -- Ben Weeks <ben.weeks@outlook.com>  Sun, 11 Jan 2026 13:20:00 +0000
+
 upowertray (1.1.1-1) questing; urgency=medium
 
   * Add debian packaging for Ubuntu PPA

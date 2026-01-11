@@ -2,7 +2,7 @@
 pkgname=upowertray
 pkgver=1.1.1
 pkgrel=1
-pkgdesc="Lightweight battery tray indicator for KDE Plasma/Wayland"
+pkgdesc="Lightweight battery tray indicator for Linux desktops (X11/Wayland)"
 arch=('x86_64')
 url="https://github.com/BenGWeeks/upowertray"
 license=('MIT')

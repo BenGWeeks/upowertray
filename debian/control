@@ -12,13 +12,18 @@ Rules-Requires-Root: no
 Package: upowertray
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Lightweight battery tray indicator for KDE Plasma
- A Qt6-based battery tray indicator that works natively on KDE Plasma/Wayland
- without interfering with systemd power management.
+Description: Lightweight battery tray indicator for Linux desktops (X11/Wayland)
+ A Qt6-based battery status icon for laptop system trays. Works on KDE Plasma,
+ LXQt, XFCE, Cinnamon, and MATE (both X11 and Wayland where supported) without
+ interfering with systemd power management or power-profiles-daemon.
+ Alternative to PowerDevil, xfce4-power-manager, or mate-power-manager for
+ users who want systemd-logind to handle lid-close, suspend, and hibernate.
+ Useful when your battery icon is missing after disabling other power managers.
  .
  Features:
-  - Shows battery percentage with color-coded icon
+  - Battery percentage with color-coded icon
   - Charging indicator (lightning bolt overlay)
+  - Low battery notifications and warnings
   - Settings dialog with power profile control
   - Configurable notification thresholds
   - Multi-language support (English, Spanish)
