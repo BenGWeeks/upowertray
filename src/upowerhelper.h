@@ -18,6 +18,7 @@ public:
         int percentage = 0;
         uint state = 0;  // 1=charging, 2=discharging, 3=empty, 4=fully-charged, 5=pending-charge
         bool isPresent = false;
+        double energyRate = 0.0;  // Power rate in Watts (positive = discharging, negative = charging)
 
         bool isCharging() const { return state == 1 || state == 5; }
         bool isFullyCharged() const { return state == 4; }

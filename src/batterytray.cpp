@@ -13,6 +13,7 @@ BatteryTray::BatteryTray(QObject *parent)
       updateTimer(nullptr),
       lastPercentage(-1),
       lastCharging(false),
+      lastEnergyRate(0.0),
       lowBatteryWarningShown(false),
       criticalBatteryWarningShown(false),
       lowBatteryThreshold(20),
@@ -76,6 +77,8 @@ void BatteryTray::updateBattery() {
     bool charging = batteryInfo->isCharging();
     bool fullyCharged = batteryInfo->isFullyCharged();
 
+    double energyRate = batteryInfo->energyRate;
+
     QString stateStr;
     if (fullyCharged) {
         stateStr = tr("Fully charged");
@@ -104,8 +107,31 @@ void BatteryTray::updateBattery() {
     }
 
     // Update tooltip
-    trayIcon->setToolTip(
-        tr("Battery: %1% (%2)\nPower: %3").arg(percentage).arg(stateStr).arg(powerProfile));
+    QString batteryLine;
+    QString powerLine;
+
+    if (fullyCharged) {
+        batteryLine = tr("Battery: %1% (Fully charged)").arg(percentage);
+        powerLine = tr("Power: %1").arg(powerProfile);
+    } else if (charging) {
+        // When charging, show charge rate on battery line
+        QString rateStr;
+        if (energyRate > 0.001) {
+            rateStr = tr(" @ %1 W").arg(energyRate, 0, 'f', 1);
+        }
+        batteryLine = tr("Battery: %1% (Charging%2)").arg(percentage).arg(rateStr);
+        powerLine = tr("Power: %1").arg(powerProfile);
+    } else {
+        // When discharging, show power consumption on power line
+        batteryLine = tr("Battery: %1% (Discharging)").arg(percentage);
+        if (energyRate > 0.001) {
+            powerLine = tr("Power: %1 (%2 W)").arg(powerProfile).arg(energyRate, 0, 'f', 1);
+        } else {
+            powerLine = tr("Power: %1").arg(powerProfile);
+        }
+    }
+
+    trayIcon->setToolTip(batteryLine + "\n" + powerLine);
 
     // Check for low battery warnings (only when discharging)
     if (!charging && !fullyCharged) {
@@ -128,6 +154,7 @@ void BatteryTray::updateBattery() {
 
     lastPercentage = percentage;
     lastCharging = charging || fullyCharged;
+    lastEnergyRate = energyRate;
 }
 
 void BatteryTray::showLowBatteryNotification(int percentage) {
@@ -162,6 +189,6 @@ void BatteryTray::quit() {
 }
 
 void BatteryTray::showSettings() {
-    SettingsDialog dialog(lastPercentage, lastCharging);
+    SettingsDialog dialog(lastPercentage, lastCharging, lastEnergyRate);
     dialog.exec();
 }

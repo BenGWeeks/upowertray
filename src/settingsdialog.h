@@ -9,7 +9,8 @@ class SettingsDialog : public QDialog {
     Q_OBJECT
 
 public:
-    explicit SettingsDialog(int batteryPercent, bool charging, QWidget *parent = nullptr);
+    explicit SettingsDialog(int batteryPercent, bool charging, double energyRate = 0.0,
+                            QWidget *parent = nullptr);
 
 private slots:
     void onPowerProfileChanged(int index);

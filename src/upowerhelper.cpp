@@ -101,6 +101,12 @@ std::optional<UPowerHelper::BatteryInfo> UPowerHelper::getBatteryInfo(const QStr
         info.isPresent = presentReply.value().toBool();
     }
 
+    QDBusReply<QVariant> energyRateReply =
+        device.call("Get", "org.freedesktop.UPower.Device", "EnergyRate");
+    if (energyRateReply.isValid()) {
+        info.energyRate = energyRateReply.value().toDouble();
+    }
+
     return info;
 }
 

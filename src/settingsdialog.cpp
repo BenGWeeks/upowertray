@@ -15,7 +15,7 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
-SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *parent)
+SettingsDialog::SettingsDialog(int batteryPercent, bool charging, double energyRate, QWidget *parent)
     : QDialog(parent) {
     setWindowTitle(tr("upowertray - Power Settings"));
     setMinimumWidth(400);
@@ -40,10 +40,22 @@ SettingsDialog::SettingsDialog(int batteryPercent, bool charging, QWidget *paren
     batteryIconLabel->setPixmap(batteryIcon.pixmap(64, 64));
     batteryLayout->addWidget(batteryIconLabel);
 
+    QString stateText;
+    if (charging) {
+        stateText = tr("Charging");
+        if (energyRate > 0.001) {
+            stateText += tr(" @ %1 W").arg(energyRate, 0, 'f', 1);
+        }
+    } else {
+        stateText = tr("Discharging");
+        if (energyRate > 0.001) {
+            stateText += tr(" (%1 W)").arg(energyRate, 0, 'f', 1);
+        }
+    }
     QString statusText =
         QString("<b style='font-size: 24px;'>%1%</b><br><span style='font-size: 14px;'>%2</span>")
             .arg(batteryPercent)
-            .arg(charging ? tr("Charging") : tr("Discharging"));
+            .arg(stateText);
     batteryTextLabel = new QLabel(statusText, this);
     batteryLayout->addWidget(batteryTextLabel);
 

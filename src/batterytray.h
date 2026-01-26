@@ -34,6 +34,7 @@ private:
 
     int lastPercentage;
     bool lastCharging;
+    double lastEnergyRate;
     bool lowBatteryWarningShown;
     bool criticalBatteryWarningShown;
 
