@@ -15,6 +15,8 @@ on:
 
 env:
   PPA: ppa:benweeks/upowertray
+  DEBFULLNAME: "Ben Weeks"
+  DEBEMAIL: "ben.weeks@outlook.com"
 
 jobs:
   ppa:
@@ -39,12 +41,17 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y devscripts debhelper dput gpg
+          sudo apt-get install -y devscripts debhelper dput gpg qt6-base-dev cmake
 
       - name: Import GPG key
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --passphrase-fd 0 --pinentry-mode loopback -s /dev/null
+          # Configure GPG for non-interactive use
+          mkdir -p ~/.gnupg
+          echo "use-agent" >> ~/.gnupg/gpg.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent || true
 
       - name: Update changelog
         run: |
@@ -67,9 +74,11 @@ jobs:
 
       - name: Build source package
         run: |
-          debuild -S -sa -k${{ secrets.GPG_KEY_ID }}
+          echo "${{ secrets.GPG_PASSPHRASE }}" | debuild -S -sa \
+            -k${{ secrets.GPG_KEY_ID }} \
+            -p"gpg --batch --passphrase-fd 0 --pinentry-mode loopback"
         env:
-          DEBSIGN_KEYID: ${{ secrets.GPG_KEY_ID }}
+          GPG_TTY: /dev/tty
 
       - name: Upload to PPA
         run: |
