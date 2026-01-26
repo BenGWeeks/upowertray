@@ -54,24 +54,27 @@ jobs:
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
           gpgconf --kill gpg-agent || true
 
+      - name: Download upstream tarball
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          curl -sL "https://github.com/${{ github.repository }}/archive/v${VERSION}.tar.gz" \
+            -o ../upowertray_${VERSION}.orig.tar.gz
+
       - name: Update changelog
         run: |
           VERSION=${{ steps.version.outputs.version }}
           SERIES=${{ steps.version.outputs.series }}
           DATE=$(date -R)
 
-          # Prepend new changelog entry
-          cat > debian/changelog.new << EOF
+          # Create new changelog (not append, to avoid duplicates)
+          cat > debian/changelog << EOF
           upowertray (${VERSION}-1~${SERIES}1) ${SERIES}; urgency=medium
 
             * Release ${VERSION}
             * See https://github.com/${{ github.repository }}/releases/tag/v${VERSION}
 
            -- Ben Weeks <ben.weeks@outlook.com>  ${DATE}
-
           EOF
-          cat debian/changelog >> debian/changelog.new
-          mv debian/changelog.new debian/changelog
 
       - name: Build source package
         run: |
