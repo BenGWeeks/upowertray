@@ -1,0 +1,76 @@
+name: Publish to PPA
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (without v prefix)'
+        required: true
+      series:
+        description: 'Ubuntu series (e.g., noble, oracular, questing)'
+        required: true
+        default: 'questing'
+
+env:
+  PPA: ppa:benweeks/upowertray
+
+jobs:
+  ppa:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        series: [noble, oracular, questing]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            echo "series=${{ github.event.inputs.series }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+            echo "series=${{ matrix.series }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y devscripts debhelper dput gpg
+
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --passphrase-fd 0 --pinentry-mode loopback -s /dev/null
+
+      - name: Update changelog
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          SERIES=${{ steps.version.outputs.series }}
+          DATE=$(date -R)
+
+          # Prepend new changelog entry
+          cat > debian/changelog.new << EOF
+          upowertray (${VERSION}-1~${SERIES}1) ${SERIES}; urgency=medium
+
+            * Release ${VERSION}
+            * See https://github.com/${{ github.repository }}/releases/tag/v${VERSION}
+
+           -- Ben Weeks <ben.weeks@outlook.com>  ${DATE}
+
+          EOF
+          cat debian/changelog >> debian/changelog.new
+          mv debian/changelog.new debian/changelog
+
+      - name: Build source package
+        run: |
+          debuild -S -sa -k${{ secrets.GPG_KEY_ID }}
+        env:
+          DEBSIGN_KEYID: ${{ secrets.GPG_KEY_ID }}
+
+      - name: Upload to PPA
+        run: |
+          dput ${{ env.PPA }} ../upowertray_*_source.changes

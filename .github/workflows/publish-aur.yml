@@ -1,0 +1,78 @@
+name: Publish to AUR
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (without v prefix)'
+        required: true
+
+jobs:
+  aur:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate PKGBUILD
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+
+          # Download tarball and calculate checksum
+          curl -sL "https://github.com/${{ github.repository }}/archive/v${VERSION}.tar.gz" -o source.tar.gz
+          SHA256=$(sha256sum source.tar.gz | cut -d' ' -f1)
+
+          cat > PKGBUILD << 'PKGBUILD_EOF'
+          # Maintainer: Ben Weeks <ben.weeks@outlook.com>
+          pkgname=upowertray
+          pkgver=${VERSION}
+          pkgrel=1
+          pkgdesc="Lightweight battery tray indicator for KDE Plasma/Wayland"
+          arch=('x86_64')
+          url="https://github.com/BenGWeeks/upowertray"
+          license=('MIT')
+          depends=('qt6-base' 'upower')
+          makedepends=('cmake' 'qt6-tools')
+          source=("$pkgname-$pkgver.tar.gz::https://github.com/BenGWeeks/upowertray/archive/v$pkgver.tar.gz")
+          sha256sums=('${SHA256}')
+
+          build() {
+              cd "$pkgname-$pkgver"
+              cmake -B build \
+                  -DCMAKE_BUILD_TYPE=Release \
+                  -DCMAKE_INSTALL_PREFIX=/usr
+              cmake --build build
+          }
+
+          package() {
+              cd "$pkgname-$pkgver"
+              DESTDIR="$pkgdir" cmake --install build
+              install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+          }
+          PKGBUILD_EOF
+
+          # Substitute variables
+          sed -i "s/\${VERSION}/${VERSION}/g" PKGBUILD
+          sed -i "s/\${SHA256}/${SHA256}/g" PKGBUILD
+
+          cat PKGBUILD
+
+      - name: Publish to AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v3.0.1
+        with:
+          pkgname: upowertray
+          pkgbuild: ./PKGBUILD
+          commit_username: ${{ secrets.AUR_USERNAME }}
+          commit_email: ${{ secrets.AUR_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Update to ${{ steps.version.outputs.version }}"
