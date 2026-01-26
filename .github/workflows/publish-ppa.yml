@@ -41,7 +41,8 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y devscripts debhelper dput gpg qt6-base-dev cmake
+          sudo apt-get install -y devscripts debhelper dput gpg \
+            qt6-base-dev qt6-tools-dev cmake build-essential libgl1-mesa-dev
 
       - name: Import GPG key
         run: |
