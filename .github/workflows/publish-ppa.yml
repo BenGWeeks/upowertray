@@ -26,6 +26,8 @@ jobs:
         series: [noble, oracular, questing]
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version || github.ref_name }}
 
       - name: Get version
         id: version
@@ -34,7 +36,8 @@ jobs:
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
             echo "series=${{ github.event.inputs.series }}" >> $GITHUB_OUTPUT
           else
-            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
             echo "series=${{ matrix.series }}" >> $GITHUB_OUTPUT
           fi
 
@@ -44,15 +47,23 @@ jobs:
           sudo apt-get install -y devscripts debhelper dput gpg \
             qt6-base-dev qt6-tools-dev cmake build-essential libgl1-mesa-dev
 
-      - name: Import GPG key
+      - name: Import GPG key and configure
         run: |
+          # Import key
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-          # Configure GPG for non-interactive use
+
+          # Get key grip for preset passphrase
+          KEYGRIP=$(gpg --list-secret-keys --with-keygrip ${{ secrets.GPG_KEY_ID }} | grep Keygrip | head -1 | awk '{print $3}')
+
+          # Configure gpg-agent
           mkdir -p ~/.gnupg
-          echo "use-agent" >> ~/.gnupg/gpg.conf
-          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          chmod 700 ~/.gnupg
+          echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          gpgconf --kill gpg-agent || true
+
+          # Restart agent and preset passphrase
+          gpg-connect-agent reloadagent /bye
+          echo "${{ secrets.GPG_PASSPHRASE }}" | /usr/lib/gnupg/gpg-preset-passphrase --preset "$KEYGRIP"
 
       - name: Download upstream tarball
         run: |
@@ -66,7 +77,6 @@ jobs:
           SERIES=${{ steps.version.outputs.series }}
           DATE=$(date -R)
 
-          # Create new changelog (not append, to avoid duplicates)
           cat > debian/changelog << EOF
           upowertray (${VERSION}-1~${SERIES}1) ${SERIES}; urgency=medium
 
@@ -76,13 +86,9 @@ jobs:
            -- Ben Weeks <ben.weeks@outlook.com>  ${DATE}
           EOF
 
-      - name: Build source package
+      - name: Build and sign source package
         run: |
-          echo "${{ secrets.GPG_PASSPHRASE }}" | debuild -S -sa \
-            -k${{ secrets.GPG_KEY_ID }} \
-            -p"gpg --batch --passphrase-fd 0 --pinentry-mode loopback"
-        env:
-          GPG_TTY: /dev/tty
+          debuild -S -sa -k${{ secrets.GPG_KEY_ID }}
 
       - name: Upload to PPA
         run: |
