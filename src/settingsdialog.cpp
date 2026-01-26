@@ -15,7 +15,8 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
-SettingsDialog::SettingsDialog(int batteryPercent, bool charging, double energyRate, QWidget *parent)
+SettingsDialog::SettingsDialog(int batteryPercent, bool charging, double energyRate,
+                               QWidget *parent)
     : QDialog(parent) {
     setWindowTitle(tr("upowertray - Power Settings"));
     setMinimumWidth(400);
