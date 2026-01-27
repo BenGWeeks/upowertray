@@ -48,22 +48,28 @@ jobs:
             qt6-base-dev qt6-tools-dev cmake build-essential libgl1-mesa-dev
 
       - name: Import GPG key and configure
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           # Import key
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
 
-          # Get key grip for preset passphrase
-          KEYGRIP=$(gpg --list-secret-keys --with-keygrip ${{ secrets.GPG_KEY_ID }} | grep Keygrip | head -1 | awk '{print $3}')
-
-          # Configure gpg-agent
+          # Configure gpg for non-interactive use
           mkdir -p ~/.gnupg
           chmod 700 ~/.gnupg
-          echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-
-          # Restart agent and preset passphrase
           gpg-connect-agent reloadagent /bye
-          echo "${{ secrets.GPG_PASSPHRASE }}" | /usr/lib/gnupg/gpg-preset-passphrase --preset "$KEYGRIP"
+
+          # Create a wrapper script for signing
+          cat > ~/gpg-passphrase.sh << 'SCRIPT'
+          #!/bin/bash
+          echo "$GPG_PASSPHRASE"
+          SCRIPT
+          chmod +x ~/gpg-passphrase.sh
+
+          # Test signing works
+          echo "test" | gpg --batch --yes --passphrase "$GPG_PASSPHRASE" --pinentry-mode loopback -s > /dev/null
 
       - name: Download upstream tarball
         run: |
@@ -87,8 +93,20 @@ jobs:
           EOF
 
       - name: Build and sign source package
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
         run: |
-          debuild -S -sa -k${{ secrets.GPG_KEY_ID }}
+          # Build unsigned first
+          debuild -S -sa -us -uc
+
+          # Sign with passphrase
+          echo "$GPG_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 --pinentry-mode loopback \
+            --default-key "$GPG_KEY_ID" --clearsign ../upowertray_*.dsc
+          mv ../upowertray_*.dsc.asc ../upowertray_*.dsc || true
+
+          # Sign changes file
+          debsign -k"$GPG_KEY_ID" --no-re-sign -p"gpg --batch --yes --passphrase '$GPG_PASSPHRASE' --pinentry-mode loopback" ../upowertray_*_source.changes
 
       - name: Upload to PPA
         run: |
