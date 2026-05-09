@@ -1,3 +1,5 @@
+#include <QApplication>
+#include <QPalette>
 #include <QtTest/QtTest>
 #include "../src/batteryicon.h"
 
@@ -9,7 +11,7 @@ private slots:
     void testGetColor_green();
     void testGetColor_amber();
     void testGetColor_red();
-    void testGetOutlineColor_white();
+    void testGetOutlineColor_themeForeground();
     void testGetOutlineColor_amber();
     void testGetOutlineColor_red();
     void testCreate_validIcon();
@@ -38,11 +40,13 @@ void TestBatteryIcon::testGetColor_red()
     QCOMPARE(color, QColor(220, 50, 50));
 }
 
-void TestBatteryIcon::testGetOutlineColor_white()
+void TestBatteryIcon::testGetOutlineColor_themeForeground()
 {
+    // Healthy outline now follows the application palette so it adapts to
+    // light/dark themes. Assert it tracks QPalette::WindowText.
     BatteryIcon::Thresholds thresholds{20, 5};
     QColor color = BatteryIcon::getOutlineColor(50, thresholds);
-    QCOMPARE(color, QColor(Qt::white));
+    QCOMPARE(color, QApplication::palette().color(QPalette::WindowText));
 }
 
 void TestBatteryIcon::testGetOutlineColor_amber()
