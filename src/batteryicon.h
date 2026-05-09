@@ -34,7 +34,8 @@ public:
     static QColor getColor(int percentage, const Thresholds &thresholds);
 
     /**
-     * Get the outline color (white when healthy, colored when low/critical).
+     * Get the outline color: tracks the system palette foreground when healthy
+     * (so it adapts to light/dark themes), amber/red when low/critical.
      * @param percentage Battery percentage (0-100)
      * @param thresholds Low and critical battery thresholds
      * @return Color for the outline
