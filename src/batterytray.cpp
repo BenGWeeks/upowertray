@@ -41,9 +41,20 @@ BatteryTray::BatteryTray(QObject *parent)
 bool BatteryTray::eventFilter(QObject *watched, QEvent *event) {
     if (watched == qApp && (event->type() == QEvent::ApplicationPaletteChange ||
                             event->type() == QEvent::ThemeChange)) {
-        updateBattery();
+        // Re-render only — avoid DBus traffic and battery-warning logic.
+        refreshIcon();
     }
     return QObject::eventFilter(watched, event);
+}
+
+void BatteryTray::refreshIcon() {
+    if (lastPercentage < 0) {
+        return;  // No battery reading yet; the timer will populate it shortly.
+    }
+    BatteryIcon::Thresholds thresholds{lowBatteryThreshold, criticalBatteryThreshold};
+    QIcon icon = BatteryIcon::create(22, lastPercentage, lastCharging, thresholds);
+    trayIcon->setIcon(icon);
+    qApp->setWindowIcon(icon);
 }
 
 BatteryTray::~BatteryTray() {}
@@ -100,11 +111,10 @@ void BatteryTray::updateBattery() {
         stateStr = tr("Discharging");
     }
 
-    // Update icon (both tray and taskbar)
-    BatteryIcon::Thresholds thresholds{lowBatteryThreshold, criticalBatteryThreshold};
-    QIcon batteryIcon = BatteryIcon::create(22, percentage, charging || fullyCharged, thresholds);
-    trayIcon->setIcon(batteryIcon);
-    qApp->setWindowIcon(batteryIcon);
+    // Cache state and render the icon (also used by the palette-change refresh).
+    lastPercentage = percentage;
+    lastCharging = charging || fullyCharged;
+    refreshIcon();
 
     // Get power profile and format display name
     QString powerProfile = UPowerHelper::getActivePowerProfile();
@@ -164,8 +174,6 @@ void BatteryTray::updateBattery() {
         criticalBatteryWarningShown = false;
     }
 
-    lastPercentage = percentage;
-    lastCharging = charging || fullyCharged;
     lastEnergyRate = energyRate;
 }
 

@@ -51,6 +51,10 @@ target_link_libraries(upowertray PRIVATE
     Qt6::DBus
 )
 
+target_compile_definitions(upowertray PRIVATE
+    UPOWERTRAY_VERSION="${PROJECT_VERSION}"
+)
+
 # Installation
 install(TARGETS upowertray DESTINATION bin)
 install(FILES upowertray.desktop DESTINATION share/applications)

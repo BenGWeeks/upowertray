@@ -28,6 +28,7 @@ private:
     void showLowBatteryNotification(int percentage);
     void loadSystemSettings();
     void findBatteryDevice();
+    void refreshIcon();
 
     QSystemTrayIcon *trayIcon;
     QMenu *trayMenu;
