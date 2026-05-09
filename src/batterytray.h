@@ -13,6 +13,9 @@ public:
     explicit BatteryTray(QObject *parent = nullptr);
     ~BatteryTray();
 
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
 private slots:
     void updateBattery();
     void onActivated(QSystemTrayIcon::ActivationReason reason);

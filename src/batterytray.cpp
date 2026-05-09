@@ -5,6 +5,7 @@
 #include "upowerhelper.h"
 
 #include <QApplication>
+#include <QEvent>
 
 BatteryTray::BatteryTray(QObject *parent)
     : QObject(parent),
@@ -28,10 +29,21 @@ BatteryTray::BatteryTray(QObject *parent)
     connect(updateTimer, &QTimer::timeout, this, &BatteryTray::updateBattery);
     updateTimer->start(UPDATE_INTERVAL_MS);
 
+    // Re-render the icon immediately when the system theme/palette changes.
+    qApp->installEventFilter(this);
+
     // Initial update
     updateBattery();
 
     trayIcon->show();
+}
+
+bool BatteryTray::eventFilter(QObject *watched, QEvent *event) {
+    if (watched == qApp && (event->type() == QEvent::ApplicationPaletteChange ||
+                            event->type() == QEvent::ThemeChange)) {
+        updateBattery();
+    }
+    return QObject::eventFilter(watched, event);
 }
 
 BatteryTray::~BatteryTray() {}

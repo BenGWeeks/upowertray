@@ -1,6 +1,8 @@
 #include "batteryicon.h"
 
+#include <QApplication>
 #include <QPainter>
+#include <QPalette>
 #include <QPixmap>
 #include <QPolygon>
 
@@ -17,13 +19,18 @@ QColor BatteryIcon::getColor(int percentage, const Thresholds &thresholds) {
     return COLOR_GREEN;
 }
 
+static QColor themeForeground() {
+    // WindowText adapts to the system palette: light on dark themes, dark on light themes.
+    return QApplication::palette().color(QPalette::WindowText);
+}
+
 QColor BatteryIcon::getOutlineColor(int percentage, const Thresholds &thresholds) {
     if (percentage <= thresholds.critical) {
         return COLOR_RED;
     } else if (percentage <= thresholds.low) {
         return COLOR_AMBER;
     }
-    return Qt::white;
+    return themeForeground();
 }
 
 QIcon BatteryIcon::create(int size, int percentage, bool charging, const Thresholds &thresholds) {
@@ -69,7 +76,7 @@ QIcon BatteryIcon::create(int size, int percentage, bool charging, const Thresho
 
     // Draw charging indicator (lightning bolt)
     if (charging) {
-        QColor boltColor = (percentage > thresholds.low) ? Qt::white : COLOR_GREEN;
+        QColor boltColor = (percentage > thresholds.low) ? themeForeground() : COLOR_GREEN;
         painter.setPen(QPen(boltColor, penWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
         painter.setBrush(boltColor);
 
