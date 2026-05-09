@@ -14,7 +14,7 @@ on:
         default: 'questing'
 
 env:
-  PPA: ppa:benweeks/upowertray
+  PPA: ppa:bengweeks/upowertray
   DEBFULLNAME: "Ben Weeks"
   DEBEMAIL: "ben.weeks@outlook.com"
 
